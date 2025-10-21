@@ -454,7 +454,7 @@ load-pyenv-version() {
   current_version="$(pyenv version-name)"
 
   # 5️⃣ Install if missing
-  if ! pyenv versions --bare | grep -q "^$resolved_version\$"; then
+  if ! pyenv versions --bare | grep -q "^$resolved_version"; then
     echo "ℹ️  Python version $resolved_version is not installed."
     read "install_py?Do you want to install it now? (y/n) "
     if [[ "$install_py" =~ ^[Yy]$ ]]; then
