@@ -4,6 +4,28 @@ The current setup guide will be for MacOS only. If you are using any other OS pl
 
 Read the instructions carefully before executing any commands. In general it is important that you understand of you are installing and how it will help with your local development.
 
+## Table of Contents
+
+- [GitHub account](#github-account)
+- [Command Line Tools](#command-line-tools)
+- [Homebrew](#homebrew)
+- [Visual Studio Code (VS Code)](#visual-studio-code-vs-code)
+- [Shell configuration](#shell-configuration)
+- [GitHub](#github)
+- [Git](#git)
+- [Programming Languages](#programming-languages)
+  - [Node.js](#nodejs)
+    - [Auto adjusting node version base on repository](#auto-adjusting-node-version-base-on-repository)
+  - [Python](#python)
+    - [Auto adjusting Python version based on repository](#auto-adjusting-python-version-based-on-repository)
+- [Check Setup](#check-setup)
+- [AI Tools](#ai-tools)
+  - [Privacy Considerations by Tool](#privacy-considerations-by-tool)
+  - [Disabling VSCode Telemetry](#disabling-vscode-telemetry)
+  - [Recommendations](#recommendations)
+  - [Personal Notes](#personal-notes)
+- [License](#license)
+
 ## GitHub account
 
 **[Sign up](https://github.com/join)** for a GitHub account if you don't already have one
@@ -566,3 +588,7 @@ That said, it is important to treat these AI assistants as tools, and DO NOT vib
 
 - Using them as tools means you are guiding the AI like a senior developer giving direction, reviewing its work, and ensuring it aligns with your intent
 - Vibe coding, on the other hand, is when you let the AI do all the work without truly understanding what it is doing
+
+## License
+
+This project is licensed under the [Apache 2.0 License](LICENSE). You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software, provided that you include the original copyright notice and permission notice in all copies or substantial portions of the software. Attribution is appreciated when using or modifying this template.
