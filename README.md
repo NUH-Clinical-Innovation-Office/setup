@@ -13,6 +13,9 @@ Read the instructions carefully before executing any commands. In general it is 
 - [Shell configuration](#shell-configuration)
 - [GitHub](#github)
 - [Git](#git)
+- [Docker](#docker)
+  - [Installing OrbStack](#installing-orbstack)
+  - [Why OrbStack over Docker Desktop?](#why-orbstack-over-docker-desktop)
 - [Programming Languages](#programming-languages)
   - [Node.js](#nodejs)
     - [Auto adjusting node version base on repository](#auto-adjusting-node-version-base-on-repository)
@@ -255,6 +258,50 @@ git config --global --list
 ```
 
 If you want to change things locally instead of globally use `--local` instead.
+
+## Docker
+
+Docker is a platform that allows you to run applications in isolated containers. We recommend using [OrbStack](https://orbstack.dev/) instead of Docker Desktop as it is faster, lighter (uses significantly less memory), and provides a better developer experience on macOS.
+
+### Installing OrbStack
+
+Run the following command in the terminal:
+
+```bash
+brew install --cask orbstack
+```
+
+After installation, launch OrbStack:
+
+```bash
+open -a OrbStack
+```
+
+OrbStack will guide you through the initial setup. It includes Docker, Docker Compose, and Kubernetes support out of the box.
+
+To verify the installation:
+
+```bash
+docker --version
+docker compose version
+```
+
+You should see version information for both commands.
+
+### Why OrbStack over Docker Desktop?
+
+- **Performance**: Up to 2x faster than Docker Desktop
+- **Memory Efficiency**: Uses ~50% less memory and CPU
+- **Speed**: Starts containers almost instantly
+- **Native Integration**: Better macOS integration with less overhead
+- **Free for Commercial Use**: No licensing restrictions unlike Docker Desktop
+
+**Note**: If you already have Docker Desktop installed, OrbStack can coexist with it, but it's recommended to uninstall Docker Desktop to avoid conflicts:
+
+```bash
+# Uninstall Docker Desktop (optional)
+brew uninstall --cask docker
+```
 
 ## Programming Languages
 
