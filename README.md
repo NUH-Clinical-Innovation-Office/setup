@@ -507,7 +507,8 @@ load-pyenv-version() {
   else
     # 2️⃣ Check pyproject.toml (Poetry or PEP 621)
     if [ -f pyproject.toml ]; then
-      pyproject_version="$(grep -E 'python\s*=\s*".*"' pyproject.toml | head -n1 | sed 's/.*"\(.*\)".*/\1/')"
+      # Extract version and strip common specifiers (>=, ==, ^, ~, etc.)
+      pyproject_version="$(grep -E 'python\s*=\s*".*"' pyproject.toml | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' | sed -E 's/^[><=^~]+\s*//')"
       resolved_version="$pyproject_version"
     fi
 
