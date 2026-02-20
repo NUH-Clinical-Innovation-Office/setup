@@ -21,6 +21,8 @@ Read the instructions carefully before executing any commands. In general it is 
     - [Auto adjusting node version base on repository](#auto-adjusting-node-version-base-on-repository)
   - [Python](#python)
     - [Auto adjusting Python version based on repository](#auto-adjusting-python-version-based-on-repository)
+  - [Go](#go)
+    - [Auto adjusting Go version based on repository](#auto-adjusting-go-version-based-on-repository)
 - [Check Setup](#check-setup)
 - [AI Tools](#ai-tools)
   - [Privacy Considerations by Tool](#privacy-considerations-by-tool)
@@ -546,6 +548,137 @@ load-pyenv-version() {
 type -a pyenv &> /dev/null && add-zsh-hook chpwd load-pyenv-version
 type -a pyenv &> /dev/null && load-pyenv-version
 ```
+
+### Go
+
+For Go we will use [goenv](https://github.com/go-nv/goenv) as our version manager.
+
+In a terminal, execute the following commands:
+
+```bash
+brew update
+brew install goenv
+```
+
+Then, add goenv to your shell by running:
+
+```bash
+# Add goenv to PATH and initialize
+echo 'eval "$(goenv init -)"' >> ~/.zshrc
+exec zsh
+```
+
+Verify the installation:
+
+```bash
+goenv -v
+```
+
+You should see a version printed, e.g., goenv 2.X.X.
+
+Now let's install a Go version:
+
+```bash
+goenv install 1.24.0
+goenv global 1.24.0
+```
+
+When the installation is finished, run:
+
+```bash
+go version
+```
+
+If you see `go version go1.24.X`, the installation succeeded.
+
+#### Auto adjusting Go version based on repository
+
+We want Go to switch automatically depending on the repository. We can leverage goenv's `.go-version` support combined with a custom zsh hook that also reads the `go` directive from `go.mod`. Open your zsh config:
+
+```bash
+code ~/.zshrc
+```
+
+Add the following at the end of the file:
+
+```zsh
+autoload -U add-zsh-hook
+
+load-goenv-version() {
+  # Ensure goenv is available
+  if ! type goenv &> /dev/null; then
+    echo "⚠️  goenv is not installed. Please install goenv first."
+    return
+  fi
+
+  # Only proceed if project declares a Go version
+  if [ ! -f .go-version ] && [ ! -f go.mod ]; then
+    return
+  fi
+
+  local desired_version resolved_version current_version
+
+  # 1️⃣ Check .go-version
+  if [ -f "$(pwd)/.go-version" ]; then
+    desired_version="$(cat "$(pwd)/.go-version")"
+  else
+    # 2️⃣ Check go.mod for go directive
+    if [ -f go.mod ]; then
+      desired_version="$(grep -E '^go [0-9]' go.mod | head -n1 | awk '{print $2}')"
+    fi
+  fi
+
+  # 3️⃣ Fallback to goenv global
+  desired_version="${desired_version:-$(goenv global)}"
+
+  # 4️⃣ Resolve to an installed patch version if only major.minor given (e.g. "1.24" -> "1.24.x")
+  if [[ "$desired_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+    resolved_version="$(goenv versions --bare | grep -E "^${desired_version}\." | sort -V | tail -n1)"
+    if [ -z "$resolved_version" ]; then
+      # No installed patch version found - find the latest available patch from goenv
+      resolved_version="$(goenv install --list | grep -E "^\s*${desired_version}\." | awk '{print $1}' | sort -V | tail -n1)"
+    fi
+  else
+    resolved_version="$desired_version"
+  fi
+
+  current_version="$(goenv version-name)"
+
+  # 5️⃣ Install if missing
+  if ! goenv versions --bare | grep -q "^${resolved_version}$"; then
+    echo "ℹ️  Go version $resolved_version is not installed."
+    read "install_go?Do you want to install it now? (y/n) "
+    if [[ "$install_go" =~ ^[Yy]$ ]]; then
+      goenv install "$resolved_version"
+      if [ $? -ne 0 ]; then
+        echo "⚠️  Failed to install Go $resolved_version."
+        return
+      fi
+    else
+      echo "⚠️  Skipping Go version switch."
+      return
+    fi
+  fi
+
+  # 6️⃣ Switch if necessary
+  if [ "$current_version" != "$resolved_version" ]; then
+    goenv local "$resolved_version"
+    echo "✅ Switched to Go $resolved_version"
+  fi
+}
+
+# Hook into directory changes
+type -a goenv &> /dev/null && add-zsh-hook chpwd load-goenv-version
+type -a goenv &> /dev/null && load-goenv-version
+```
+
+After saving, restart the shell:
+
+```bash
+exec zsh
+```
+
+The hook will now automatically switch to the Go version declared in `.go-version` or the `go` directive in `go.mod` whenever you change into a project directory.
 
 ## Check Setup
 

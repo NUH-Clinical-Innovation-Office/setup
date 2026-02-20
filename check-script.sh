@@ -89,10 +89,10 @@ if [ -s "$PYENV_ROOT/bin/pyenv" ]; then
 fi
 
 # -------------------------------
-# Node & Python check (zsh-safe)
+# Node, Python & Go check (zsh-safe)
 # -------------------------------
 echo ""
-echo "🔧 Checking Node.js and Python versions..."
+echo "🔧 Checking Node.js, Python, and Go versions..."
 
 # Node.js
 if command -v nvm >/dev/null 2>&1; then
@@ -119,6 +119,20 @@ if command -v pyenv >/dev/null 2>&1; then
   fi
 else
   echo -e "\033[0;31m❌ pyenv is NOT installed\033[0m"
+  all_ok=false
+fi
+
+# Go
+if command -v goenv >/dev/null 2>&1; then
+  if command -v go >/dev/null 2>&1; then
+    GO_VER=$(go version)
+    echo -e "\033[0;32m✅ goenv is installed, Go version: $GO_VER\033[0m"
+  else
+    echo -e "\033[0;31m❌ goenv is installed but Go is NOT installed\033[0m"
+    all_ok=false
+  fi
+else
+  echo -e "\033[0;31m❌ goenv is NOT installed\033[0m"
   all_ok=false
 fi
 
