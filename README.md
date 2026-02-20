@@ -544,7 +544,7 @@ load-pyenv-version() {
 
 # Hook into directory changes
 type -a pyenv &> /dev/null && add-zsh-hook chpwd load-pyenv-version
-type -a pyenv &> /dev/null && load-pyenv-version.
+type -a pyenv &> /dev/null && load-pyenv-version
 ```
 
 ## Check Setup
