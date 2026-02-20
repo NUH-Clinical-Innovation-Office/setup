@@ -318,7 +318,7 @@ For Node.js we will use [nvm](https://github.com/nvm-sh/nvm) as our version mana
 In a terminal, execute the following commands:
 
 ```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | zsh
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | zsh
 ```
 
 ```bash
