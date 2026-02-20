@@ -440,17 +440,17 @@ For Python we will use [pyenv](https://github.com/pyenv/pyenv) as our version ma
 In a terminal, execute the following commands:
 
 ```bash
-# Install pyenv via Git
-curl https://pyenv.run | bash
+# Install pyenv via Homebrew
+brew install pyenv
 ```
 
 Then, add pyenv to your shell by running:
 
 ```bash
 # Add pyenv to PATH and initialize
-echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.zshrc
-echo 'eval "$(pyenv init --path)"' >> ~/.zshrc
-echo 'eval "$(pyenv init -)"' >> ~/.zshrc
+echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
+echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
+echo 'eval "$(pyenv init - zsh)"' >> ~/.zshrc
 exec zsh
 ```
 
