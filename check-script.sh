@@ -157,8 +157,11 @@ vscode_extensions=(
   mechatroner.rainbow-csv
 )
 
+# Get all installed extensions once to avoid SIGPIPE errors
+installed_extensions=$(code --list-extensions 2>/dev/null || echo "")
+
 for ext in "${vscode_extensions[@]}"; do
-  if code --list-extensions | grep -q "$ext"; then
+  if echo "$installed_extensions" | grep -q "^${ext}$"; then
     echo "✅ VS Code extension $ext installed"
   else
     echo "❌ VS Code extension $ext NOT installed"
