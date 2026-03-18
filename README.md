@@ -218,9 +218,9 @@ You will be asked a few questions:
 
 If you already have SSH keys, you will be shown `Upload your SSH public key to your GitHub account?`. Using the arrow keys, select your public key and press `Enter`.
 
-2. `Enter a passphrase for your new SSH key (Optional)`. Type something you want and that you'll remember. It's a password to protect your private key stored on your hard drive. Then press `Enter`.
+1. `Enter a passphrase for your new SSH key (Optional)`. Type something you want and that you'll remember. It's a password to protect your private key stored on your hard drive. Then press `Enter`.
 
-3. `Title for your SSH key`. You can used the default by just pressing `Enter`.
+2. `Title for your SSH key`. You can used the default by just pressing `Enter`.
 
 You will then get the following output:
 
@@ -748,6 +748,25 @@ AI coding assistants can significantly boost productivity, but it is crucial to 
 - **API Authentication**: If using Qwen.ai or OpenAI-compatible APIs, you're subject to their respective privacy policies
 - **Telemetry**: Collects anonymous usage statistics (can be disabled in settings)
 - **Recommendation**: Best suited for non-sensitive code or when run completely locally
+
+[**Alibaba Cloud Coding Plan**](https://www.alibabacloud.com/help/en/model-studio/coding-plan) (Paid - subscription plans):
+
+- **What It Is**: A monthly subscription by Alibaba Cloud's Model Studio offering flat-rate access to multiple top AI coding models, avoiding unpredictable API billing
+- **Pricing**: Lite plan ($10/month, ~18,000 requests/month); Pro plan ($50/month, ~90,000 requests/month)
+- **Available Models**: Qwen3.5-Plus, Qwen3-Coder-Next, GLM-4.7, Kimi K2.5, and more — switchable via `/model` command
+- **Compatible Tools**: Works with Claude Code, Qwen Code CLI, Cursor, Cline, OpenCode, OpenClaw, and any tool supporting OpenAI or Anthropic API protocols
+- **Data Privacy**: Code is processed on Alibaba Cloud servers (Singapore/Virginia); review [Alibaba Cloud's privacy policy](https://www.alibabacloud.com/help/en/model-studio/coding-plan) before use — particularly important for sensitive or proprietary code
+- **Setup**: Use the plan-specific API key (`sk-sp-xxxxx`) with the base URL `https://coding-intl.dashscope.aliyuncs.com/v1` (OpenAI-compatible) or `https://coding-intl.dashscope.aliyuncs.com/apps/anthropic` (Anthropic-compatible)
+- **Note**: API key must only be used in interactive coding tools; using it in automated scripts or batch scenarios may result in a suspended subscription
+
+To use with Claude Code:
+
+```bash
+export ANTHROPIC_BASE_URL=https://coding-intl.dashscope.aliyuncs.com/apps/anthropic
+export ANTHROPIC_API_KEY=YOUR_CODING_PLAN_API_KEY
+export ANTHROPIC_MODEL=qwen3.5-plus
+claude
+```
 
 ### Disabling VSCode Telemetry
 
