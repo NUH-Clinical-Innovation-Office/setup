@@ -358,6 +358,11 @@ code ~/.zshrc
 add the following at the end of the file
 
 ```zsh
+# Load the nvm script to make the nvm command available in this shell session
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+
+# Enable zsh hook system so we can run functions on directory change
 autoload -U add-zsh-hook
 
 load-nvmrc() {
@@ -428,7 +433,8 @@ load-nvmrc() {
   fi
 }
 
-# Hook into directory changes
+# Hook into directory changes (chpwd runs load-nvmrc every time you cd into a directory)
+# Also run once immediately to apply the correct version in the current directory
 type -a nvm &> /dev/null && add-zsh-hook chpwd load-nvmrc
 type -a nvm &> /dev/null && load-nvmrc
 ```
@@ -444,13 +450,9 @@ In a terminal, execute the following commands:
 brew install pyenv
 ```
 
-Then, add pyenv to your shell by running:
+Then, restart the shell:
 
 ```bash
-# Add pyenv to PATH and initialize
-echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
-echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
-echo 'eval "$(pyenv init - zsh)"' >> ~/.zshrc
 exec zsh
 ```
 
@@ -487,6 +489,13 @@ code ~/.zshrc
 Add the following at the end of the file:
 
 ```zsh
+# Set the root directory for pyenv and add its binary to PATH
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+# Initialize pyenv so the pyenv command and shims are available
+eval "$(pyenv init - zsh)"
+
+# Enable zsh hook system so we can run functions on directory change
 autoload -U add-zsh-hook
 
 load-pyenv-version() {
@@ -510,13 +519,13 @@ load-pyenv-version() {
     # 2️⃣ Check pyproject.toml (Poetry or PEP 621)
     if [ -f pyproject.toml ]; then
       # Extract version and strip common specifiers (>=, ==, ^, ~, etc.)
-      pyproject_version="$(grep -E 'python\s*=\s*".*"' pyproject.toml | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' | sed -E 's/^[><=^~]+\s*//')"
+      pyproject_version="$(grep -E ‘python\s*=\s*".*"’ pyproject.toml | head -n1 | sed -E ‘s/.*"([^"]+)".*/\1/’ | sed -E ‘s/^[><=^~]+\s*//’)"
       resolved_version="$pyproject_version"
     fi
 
     # 3️⃣ Check Pipfile
     if [ -f Pipfile ]; then
-      pipfile_version="$(grep 'python_version' Pipfile | head -n1 | awk -F'"' '{print $2}')"
+      pipfile_version="$(grep ‘python_version’ Pipfile | head -n1 | awk -F’"’ ‘{print $2}’)"
       resolved_version="${resolved_version:-$pipfile_version}"
     fi
   fi
@@ -544,7 +553,8 @@ load-pyenv-version() {
   fi
 }
 
-# Hook into directory changes
+# Hook into directory changes (chpwd runs load-pyenv-version every time you cd into a directory)
+# Also run once immediately to apply the correct version in the current directory
 type -a pyenv &> /dev/null && add-zsh-hook chpwd load-pyenv-version
 type -a pyenv &> /dev/null && load-pyenv-version
 ```
@@ -563,8 +573,11 @@ brew install goenv
 Then, add goenv to your shell by running:
 
 ```bash
-# Add goenv to PATH and initialize
-echo 'eval "$(goenv init -)"' >> ~/.zshrc
+# Add goenv root, shims, and bin directories to PATH, then initialize goenv
+echo 'export GOENV_ROOT="$HOME/.goenv"' >> ~/.zshrc
+echo 'export PATH="$GOENV_ROOT/shims:$GOENV_ROOT/bin:$PATH"' >> ~/.zshrc
+echo 'export PATH="$PATH:$HOME/go/bin"' >> ~/.zshrc
+echo 'eval "$(goenv init - zsh)"' >> ~/.zshrc
 exec zsh
 ```
 
@@ -602,6 +615,7 @@ code ~/.zshrc
 Add the following at the end of the file:
 
 ```zsh
+# Enable zsh hook system so we can run functions on directory change
 autoload -U add-zsh-hook
 
 load-goenv-version() {
@@ -647,7 +661,9 @@ load-goenv-version() {
   # 5️⃣ Install if missing
   if ! goenv versions --bare | grep -q "^${resolved_version}$"; then
     echo "ℹ️  Go version $resolved_version is not installed."
-    read "install_go?Do you want to install it now? (y/n) "
+    # Use echo -n to keep the prompt on the same line, then read the response
+    echo -n "Do you want to install it now? (y/n) "
+    read install_go
     if [[ "$install_go" =~ ^[Yy]$ ]]; then
       goenv install "$resolved_version"
       if [ $? -ne 0 ]; then
@@ -660,14 +676,15 @@ load-goenv-version() {
     fi
   fi
 
-  # 6️⃣ Switch if necessary
+  # 6️⃣ Switch if necessary - use goenv shell to set version for the current shell session only
   if [ "$current_version" != "$resolved_version" ]; then
-    goenv local "$resolved_version"
+    goenv shell "$resolved_version"
     echo "✅ Switched to Go $resolved_version"
   fi
 }
 
-# Hook into directory changes
+# Hook into directory changes (chpwd runs load-goenv-version every time you cd into a directory)
+# Also run once immediately to apply the correct version in the current directory
 type -a goenv &> /dev/null && add-zsh-hook chpwd load-goenv-version
 type -a goenv &> /dev/null && load-goenv-version
 ```
