@@ -311,6 +311,23 @@ Within an organization, you will often work with multiple programming languages.
 
 If you are working in NUH Clinical Innovation Office, install all of the below.
 
+### Why use a version manager instead of installing directly?
+
+When you install a language directly (e.g. downloading Node.js or Python from the official website, or running `brew install node`), you get a single fixed version installed globally on your machine. This works fine for personal projects, but causes problems in a team or multi-project environment:
+
+- **Version conflicts**: Project A might require Node.js 18 while Project B requires Node.js 24. A direct install can only give you one version at a time.
+- **No easy switching**: Upgrading for one project can break another. Downgrading is painful and error-prone.
+- **Inconsistency across the team**: If everyone installs different versions manually, bugs appear on some machines but not others.
+
+A **version manager** (like `nvm` for Node.js, `pyenv` for Python, or `goenv` for Go) solves all of this by letting you:
+
+- Install and store **multiple versions** of a language side by side
+- **Switch between versions** instantly per project or directory
+- **Automatically use the right version** when you enter a project folder (via `.nvmrc`, `.python-version`, or `.go-version` files)
+- Ensure every developer on the team runs the **exact same version**, eliminating "works on my machine" issues
+
+Think of it this way: a direct install is like having only one pair of shoes, while a version manager is like having a shoe rack — you pick the right pair for the right occasion.
+
 ## Node.js
 
 For Node.js we will use [nvm](https://github.com/nvm-sh/nvm) as our version manager.
