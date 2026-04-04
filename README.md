@@ -746,26 +746,12 @@ AI coding assistants can significantly boost productivity, but it is crucial to 
 
 ### Privacy Considerations by Tool
 
-[**Claude Code**](https://www.claude.com/product/claude-code) (Paid - Pro/Max plans):
+[**Claude Code**](https://www.claude.com/product/claude-code) (Paid - Pro/Max plans) (Recommended):
 
 - **Updated Policy (2025)**: As of October 2025, Anthropic now uses consumer account data (Free, Pro, Max) for training unless you opt out.
 - **Action Required**: Navigate to Privacy Settings and disable "Help improve Claude" to opt out, and turn off location metadata.
 - **Data Retention**: 5 years if opted in, 30 days if opted out
 - **Business Users**: Claude for Work, Claude Gov, and API users are NOT affected - their data is never used for training
-
-[**GitHub Copilot**](https://github.com/features/copilot) (Paid - Business/Enterprise recommended):
-
-- **Individual Plan**: Data may be used for model fine-tuning unless you opt out
-- **Business/Enterprise Plans**: Your code is NEVER used for training - this is guaranteed
-- **Important Caveat**: All plans send your code to Microsoft/Azure servers for processing
-- **Data Retention**: Prompts are discarded after suggestions; usage data retained for 24 months
-
-[**Cursor**](https://cursor.com/features) (Paid - Business plan recommended):
-
-- **Free/Pro Plans**: Privacy Mode is OFF by default - your code CAN be used for training
-- **Business/Team Plans**: Privacy Mode is ON by default with zero data retention guarantee
-- **Action Required for Free/Pro**: Manually enable Privacy Mode in settings to prevent training on your code
-- **When Privacy Mode is ON**: Code is never stored or used for training by Cursor or third parties
 
 [**OpenAI Codex**](https://openai.com/codex/) (Paid - ChatGPT Plus/Pro/Team/Enterprise):
 
@@ -774,13 +760,6 @@ AI coding assistants can significantly boost productivity, but it is crucial to 
 - **Privacy Policy**: Team/Enterprise users' code is NOT used for training by default; other users can opt out of training
 - **Important Notes**: Code is processed in ephemeral cloud sandboxes on OpenAI servers; CLI keeps source code local and only sends prompts/context
 - **Transparency Concern**: Lacks easily accessible privacy documentation specifically for Codex interactions
-
-[**Qwen Coder**](https://github.com/QwenLM/qwen-code) (Free/Open Source):
-
-- **Training Policy**: Does not use your code for training when used locally
-- **API Authentication**: If using Qwen.ai or OpenAI-compatible APIs, you're subject to their respective privacy policies
-- **Telemetry**: Collects anonymous usage statistics (can be disabled in settings)
-- **Recommendation**: Best suited for non-sensitive code or when run completely locally
 
 [**Alibaba Cloud Coding Plan**](https://www.alibabacloud.com/help/en/model-studio/coding-plan) (Paid - subscription plans):
 
@@ -800,6 +779,9 @@ export ANTHROPIC_API_KEY=YOUR_CODING_PLAN_API_KEY
 export ANTHROPIC_MODEL=qwen3.5-plus
 claude
 ```
+
+Notes:
+Other AI coding tools such as Cursor, GitHub Copilot, and Qwen Code etc. have been intentionally excluded from this guide to keep things focused. While these are capable tools that can support productive software development, the options listed here are ones I have personally used and evaluated. In my experience, they offer a stronger overall experience and value, though this reflects my own judgment and may not align with everyone's preferences. You are encouraged to explore other tools and choose what works best for your workflow.
 
 ### Disabling VSCode Telemetry
 
@@ -841,7 +823,7 @@ That said, it is important to treat these AI assistants as tools, and DO NOT vib
 
 ## License
 
-Copyright 2025 NUH Department of Medicine
+Copyright 2026 NUH Department of Medicine
 
 This project is licensed under the [Apache 2.0 License](LICENSE).
 
