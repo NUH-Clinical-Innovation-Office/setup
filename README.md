@@ -175,6 +175,13 @@ export LC_ALL=en_US.UTF-8
 # Default code editor
 export BUNDLER_EDITOR=code
 export EDITOR="code --wait"
+
+source $ZSH/oh-my-zsh.sh
+
+# PATH exports
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="/opt/homebrew/bin:$PATH"
+export PATH="/opt/homebrew/sbin:$PATH"
 ```
 
 After making the adjustment, save the file. Go back to your terminal and run the following
@@ -375,11 +382,15 @@ code ~/.zshrc
 add the following at the end of the file
 
 ```zsh
-# Load the nvm script to make the nvm command available in this shell session
-export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+# ─── Tool Initializations ────────────────────────────────────────────────────
 
-# Enable zsh hook system so we can run functions on directory change
+# nvm
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+# ─── Auto Version Switching ───────────────────────────────────────────────────
+
 autoload -U add-zsh-hook
 
 load-nvmrc() {
@@ -450,10 +461,9 @@ load-nvmrc() {
   fi
 }
 
-# Hook into directory changes (chpwd runs load-nvmrc every time you cd into a directory)
-# Also run once immediately to apply the correct version in the current directory
-type -a nvm &> /dev/null && add-zsh-hook chpwd load-nvmrc
-type -a nvm &> /dev/null && load-nvmrc
+# Register hook and run on shell start
+add-zsh-hook chpwd load-nvmrc
+load-nvmrc
 ```
 
 ### Python
@@ -497,24 +507,24 @@ If you see Python 3.12.X, the installation succeeded.
 
 ### Auto adjusting Python version based on repository
 
-We often want Python to switch automatically depending on the repository. We can leverage pyenv’s .python-version support in combination with zsh. Open your zsh config:
+We often want Python to switch automatically depending on the repository. We can leverage pyenv’s `.python-version` support in combination with zsh. Open your zsh config:
 
 ```bash
 code ~/.zshrc
 ```
 
-Add the following at the end of the file:
+First, add the pyenv initialization in the tool initializations block (after nvm):
 
 ```zsh
-# Set the root directory for pyenv and add its binary to PATH
+# pyenv
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-# Initialize pyenv so the pyenv command and shims are available
 eval "$(pyenv init - zsh)"
+```
 
-# Enable zsh hook system so we can run functions on directory change
-autoload -U add-zsh-hook
+Then add the following auto-switching hook at the end of the file:
 
+```zsh
 load-pyenv-version() {
   # Ensure pyenv is available
   if ! type pyenv &> /dev/null; then
@@ -570,10 +580,9 @@ load-pyenv-version() {
   fi
 }
 
-# Hook into directory changes (chpwd runs load-pyenv-version every time you cd into a directory)
-# Also run once immediately to apply the correct version in the current directory
-type -a pyenv &> /dev/null && add-zsh-hook chpwd load-pyenv-version
-type -a pyenv &> /dev/null && load-pyenv-version
+# Register hook and run on shell start
+add-zsh-hook chpwd load-pyenv-version
+load-pyenv-version
 ```
 
 ### Go
@@ -587,14 +596,25 @@ brew update
 brew install goenv
 ```
 
-Then, add goenv to your shell by running:
+Then, open your zsh config and add goenv initialization in the tool initializations block (after pyenv):
 
 ```bash
-# Add goenv root, shims, and bin directories to PATH, then initialize goenv
-echo 'export GOENV_ROOT="$HOME/.goenv"' >> ~/.zshrc
-echo 'export PATH="$GOENV_ROOT/shims:$GOENV_ROOT/bin:$PATH"' >> ~/.zshrc
-echo 'export PATH="$PATH:$HOME/go/bin"' >> ~/.zshrc
-echo 'eval "$(goenv init - zsh)"' >> ~/.zshrc
+code ~/.zshrc
+```
+
+Add the following:
+
+```zsh
+# goenv
+export GOENV_ROOT="$HOME/.goenv"
+export PATH="$GOENV_ROOT/shims:$GOENV_ROOT/bin:$PATH"
+export PATH="$PATH:$HOME/go/bin"
+eval "$(goenv init - zsh)"
+```
+
+Then restart the shell:
+
+```bash
 exec zsh
 ```
 
@@ -629,12 +649,9 @@ We want Go to switch automatically depending on the repository. We can leverage 
 code ~/.zshrc
 ```
 
-Add the following at the end of the file:
+Add the following auto-switching hook at the end of the file:
 
 ```zsh
-# Enable zsh hook system so we can run functions on directory change
-autoload -U add-zsh-hook
-
 load-goenv-version() {
   # Ensure goenv is available
   if ! type goenv &> /dev/null; then
@@ -700,10 +717,9 @@ load-goenv-version() {
   fi
 }
 
-# Hook into directory changes (chpwd runs load-goenv-version every time you cd into a directory)
-# Also run once immediately to apply the correct version in the current directory
-type -a goenv &> /dev/null && add-zsh-hook chpwd load-goenv-version
-type -a goenv &> /dev/null && load-goenv-version
+# Register hook and run on shell start
+add-zsh-hook chpwd load-goenv-version
+load-goenv-version
 ```
 
 After saving, restart the shell:
