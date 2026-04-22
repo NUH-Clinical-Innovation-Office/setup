@@ -778,6 +778,59 @@ export ANTHROPIC_MODEL=qwen3.5-plus
 claude
 ```
 
+### Using Alternative Endpoints to Save Cost
+
+Claude Code supports alternative API endpoints via environment variables. This lets you use different models (e.g., Alibaba's Qwen, OpenAI models) that may be cheaper or faster for specific tasks.
+
+**Trade-offs:**
+
+- **Quality**: Anthropic's Claude models generally produce higher quality output for complex reasoning, debugging, and architecture decisions. Third-party models may struggle with nuanced edge cases.
+- **Speed**: Alternative endpoints often respond faster but may require more iterations to get correct results — net time savings vary.
+- **Cost**: Qwen and similar models cost significantly less per token (~10-50x cheaper). Useful for straightforward tasks where Claude would be overkill.
+
+**When to use which:**
+
+| Task                                         | Model                                |
+| -------------------------------------------- | ------------------------------------ |
+| Complex debugging, architecture, code review | Anthropic Claude                     |
+| Simple refactors, boilerplate, documentation | Alternative (Qwen, etc.)             |
+| Exploratory prototyping                      | Alternative first, escalate if stuck |
+
+**Usage with aliases:**
+
+Add these to your `~/.aliases` or `~/.zshrc`:
+
+```zsh
+# Qwen (Alibaba Cloud Coding Plan)
+claude-qwen() {
+  local OLD_BASE_URL="$ANTHROPIC_BASE_URL"
+  local OLD_AUTH_TOKEN="$ANTHROPIC_AUTH_TOKEN"
+  local OLD_MODEL="$ANTHROPIC_MODEL"
+  local OLD_DISABLE="$CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
+
+  export ANTHROPIC_BASE_URL="https://coding-intl.dashscope.aliyuncs.com/apps/anthropic"
+  export ANTHROPIC_API_KEY="YOUR-API-KEY"
+  export ANTHROPIC_MODEL="qwen3.5-plus"
+  export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+
+  claude "$@"
+
+  # We meed this to set the values back to the original so that when you quit and launch claude it will be back to your anthropic subscription
+  export ANTHROPIC_BASE_URL="$OLD_BASE_URL"
+  export ANTHROPIC_AUTH_TOKEN="$OLD_AUTH_TOKEN"
+  export ANTHROPIC_MODEL="$OLD_MODEL"
+  export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="$OLD_DISABLE"
+```
+
+**Usage:**
+
+```bash
+claude-qwen                              # Qwen via Alibaba endpoint
+ANTHROPIC_MODEL=qwen3-coder-next claude  # One-off with different model
+```
+
+**Note:** Replace `YOUR-API-KEY` with your actual Alibaba Coding Plan API key.
+
 Notes:
 Other AI coding tools such as Cursor, GitHub Copilot, and Qwen Code etc. have been intentionally excluded from this guide to keep things focused. While these are capable tools that can support productive software development, the options listed here are ones I have personally used and evaluated. In my experience, they offer a stronger overall experience and value, though this reflects my own judgment and may not align with everyone's preferences. You are encouraged to explore other tools and choose what works best for your workflow.
 
