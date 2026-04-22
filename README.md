@@ -29,6 +29,7 @@ Read the instructions carefully before executing any commands. In general it is 
   - [Disabling VSCode Telemetry](#disabling-vscode-telemetry)
   - [Recommendations](#recommendations)
   - [Personal Notes](#personal-notes)
+- [Contributing](#contributing)
 - [License](#license)
 
 ## GitHub account
@@ -820,6 +821,14 @@ That said, it is important to treat these AI assistants as tools, and DO NOT vib
 
 - Using them as tools means you are guiding the AI like a senior developer giving direction, reviewing its work, and ensuring it aligns with your intent
 - Vibe coding, on the other hand, is when you let the AI do all the work without truly understanding what it is doing
+
+## Contributing
+
+Contributions are welcome. Please ensure that any updates to this setup guide reflect actual changes to the codebase or verified instructions.
+
+## Documentation
+
+- [Features](docs/features.md) — Inventory of setup guide features and supported tools
 
 ## License
 
