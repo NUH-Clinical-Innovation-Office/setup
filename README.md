@@ -424,15 +424,13 @@ load-nvmrc() {
   fi
 
   # 4️⃣ Determine if it's an exact version or a range
-  # Exact version patterns: "18", "18.0.0", "v18.0.0"
-  # Range patterns: ">=18.0.0", "^18.0.0", "~18.0.0", ">=18.0.0 <19.0.0", etc.
   if [[ "$desired_node_version" =~ ^v?[0-9]+(\.[0-9]+(\.[0-9]+)?)?$ ]]; then
     # It's an exact version - use it directly
     resolved_version="$desired_node_version"
   else
     # It's a range - resolve to latest LTS version matching the range
     local versions=($(nvm ls-remote --lts | grep -o "v[0-9]\+\.[0-9]\+\.[0-9]\+" | sed 's/v//'))
-    resolved_version="$(npx -q semver -r "$desired_node_version" "${versions[@]}")"
+    resolved_version="$(npx -q semver -r "$desired_node_version" <<< "${versions[*]}")"
 
     # Fallback to latest LTS if no match found
     if [ -z "$resolved_version" ]; then
