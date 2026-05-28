@@ -2,7 +2,7 @@
 
 The current setup guide will be for MacOS only. If you are using any other OS please contact Yong Cheng for custom instructions.
 
-Read the instructions carefully before executing any commands. In general it is important that you understand of you are installing and how it will help with your local development.
+Read the instructions carefully before executing any commands. In general it is important that you understand what you are installing and how it will help with your local development.
 
 ## Table of Contents
 
@@ -314,7 +314,7 @@ brew uninstall --cask docker
 
 ## Programming Languages
 
-Within an organization, you will often work with multiple programming languages. It is important to install each language using a version manager to ensure consistency and avoid conflicts between projects. If you already have your own preferred language version manager, go ahead and user it. However, if you have no idea you can install the following depending on the programming language you are using.
+Within an organization, you will often work with multiple programming languages. It is important to install each language using a version manager to ensure consistency and avoid conflicts between projects. If you already have your own preferred language version manager, go ahead and use it. However, if you have no idea you can install the following depending on the programming language you are using.
 
 If you are working in NUH Clinical Innovation Office, install all of the below.
 
@@ -815,7 +815,7 @@ claude-qwen() {
 
   claude "$@"
 
-  # We meed this to set the values back to the original so that when you quit and launch claude it will be back to your anthropic subscription
+  # We need this to set the values back to the original so that when you quit and launch claude it will be back to your anthropic subscription
   export ANTHROPIC_BASE_URL="$OLD_BASE_URL"
   export ANTHROPIC_AUTH_TOKEN="$OLD_AUTH_TOKEN"
   export ANTHROPIC_MODEL="$OLD_MODEL"
