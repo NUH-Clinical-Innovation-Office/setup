@@ -23,6 +23,8 @@ Read the instructions carefully before executing any commands. In general it is 
     - [Auto adjusting Python version based on repository](#auto-adjusting-python-version-based-on-repository)
   - [Go](#go)
     - [Auto adjusting Go version based on repository](#auto-adjusting-go-version-based-on-repository)
+  - [Java](#java)
+    - [Auto adjusting Java version based on repository](#auto-adjusting-java-version-based-on-repository)
 - [Check Setup](#check-setup)
 - [AI Tools](#ai-tools)
   - [Privacy Considerations by Tool](#privacy-considerations-by-tool)
@@ -326,11 +328,11 @@ When you install a language directly (e.g. downloading Node.js or Python from th
 - **No easy switching**: Upgrading for one project can break another. Downgrading is painful and error-prone.
 - **Inconsistency across the team**: If everyone installs different versions manually, bugs appear on some machines but not others.
 
-A **version manager** (like `nvm` for Node.js, `pyenv` for Python, or `goenv` for Go) solves all of this by letting you:
+A **version manager** (like `nvm` for Node.js, `pyenv` for Python, `goenv` for Go, or `sdkman` for Java) solves all of this by letting you:
 
 - Install and store **multiple versions** of a language side by side
 - **Switch between versions** instantly per project or directory
-- **Automatically use the right version** when you enter a project folder (via `.nvmrc`, `.python-version`, or `.go-version` files)
+- **Automatically use the right version** when you enter a project folder (via `.nvmrc`, `.python-version`, `.go-version`, or `.sdkmanrc` files)
 - Ensure every developer on the team runs the **exact same version**, eliminating "works on my machine" issues
 
 Think of it this way: a direct install is like having only one pair of shoes, while a version manager is like having a shoe rack — you pick the right pair for the right occasion.
@@ -727,6 +729,158 @@ exec zsh
 ```
 
 The hook will now automatically switch to the Go version declared in `.go-version` or the `go` directive in `go.mod` whenever you change into a project directory.
+
+## Java
+
+For Java we will use [SDKMAN!](https://sdkman.io/) as our version manager. SDKMAN! manages not only the JDK itself but the wider JVM ecosystem — Maven, Gradle, Kotlin, Scala, and more — so it is the natural choice for Java projects.
+
+In a terminal, execute the following command:
+
+```bash
+curl -s "https://get.sdkman.io" | bash
+```
+
+Then, restart the shell:
+
+```bash
+exec zsh
+```
+
+Verify the installation:
+
+```bash
+sdk version
+```
+
+You should see a version printed, e.g., `SDKMAN 5.X.X`.
+
+Now let's install a Java version. We use a [Temurin](https://adoptium.net/) (Eclipse Adoptium) build, the most widely used free OpenJDK distribution:
+
+```bash
+sdk install java 25.0.3-tem
+```
+
+You can list all available Java versions with `sdk list java`. When the installation is finished, run:
+
+```bash
+java -version
+```
+
+If you see `openjdk version "25.0.3"`, the installation succeeded.
+
+### Auto adjusting Java version based on repository
+
+We want Java to switch automatically depending on the repository. SDKMAN! supports a `.sdkmanrc` file that declares the JDK (and other SDKs) a project needs. A `.sdkmanrc` looks like this:
+
+```
+java=25.0.3-tem
+```
+
+SDKMAN! ships with its own `.sdkmanrc` auto-switching, but we use a custom zsh hook to match the behaviour of our other version managers — prompting before installing a missing version and falling back to the JDK declared in `pom.xml` or `build.gradle`. Open your zsh config:
+
+```bash
+code ~/.zshrc
+```
+
+First, confirm SDKMAN! added its initialization to the bottom of your `~/.zshrc` (the installer does this automatically). It should look like this:
+
+```zsh
+# sdkman
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+```
+
+We disable SDKMAN!'s built-in auto-env so it does not clash with our hook. Edit `~/.sdkman/etc/config` and ensure:
+
+```
+sdkman_auto_env=false
+```
+
+Then add the following auto-switching hook at the end of your `~/.zshrc`:
+
+```zsh
+load-sdkman-java() {
+  # Ensure sdkman is available
+  if ! type sdk &> /dev/null; then
+    echo "⚠️  SDKMAN! is not installed. Please install SDKMAN! first."
+    return
+  fi
+
+  # Only proceed if project declares a Java version
+  if [ ! -f .sdkmanrc ] && [ ! -f pom.xml ] && [ ! -f build.gradle ] && [ ! -f build.gradle.kts ]; then
+    return
+  fi
+
+  local desired_version current_version
+
+  # 1️⃣ Check .sdkmanrc for the java entry
+  if [ -f "$(pwd)/.sdkmanrc" ]; then
+    desired_version="$(grep -E '^\s*java\s*=' .sdkmanrc | head -n1 | sed -E 's/^\s*java\s*=\s*//' | tr -d '[:space:]')"
+  fi
+
+  # 2️⃣ Check Maven pom.xml for <maven.compiler.release> / <java.version>
+  if [ -z "$desired_version" ] && [ -f pom.xml ]; then
+    local major
+    major="$(grep -E -o '<(maven\.compiler\.release|maven\.compiler\.target|java\.version)>[0-9]+' pom.xml | head -n1 | grep -E -o '[0-9]+$')"
+    if [ -n "$major" ]; then
+      # Resolve the major version to the latest installed Temurin build
+      desired_version="$(sdk list java 2>/dev/null | grep -E -o "${major}\.[0-9.]+-tem" | head -n1)"
+    fi
+  fi
+
+  # 3️⃣ Check Gradle build files for sourceCompatibility / languageVersion
+  if [ -z "$desired_version" ] && { [ -f build.gradle ] || [ -f build.gradle.kts ]; }; then
+    local gradle_file major
+    [ -f build.gradle ] && gradle_file="build.gradle" || gradle_file="build.gradle.kts"
+    major="$(grep -E -o '(sourceCompatibility|languageVersion|JavaLanguageVersion\.of)\D*[0-9]+' "$gradle_file" | head -n1 | grep -E -o '[0-9]+$')"
+    if [ -n "$major" ]; then
+      desired_version="$(sdk list java 2>/dev/null | grep -E -o "${major}\.[0-9.]+-tem" | head -n1)"
+    fi
+  fi
+
+  # 4️⃣ Fallback to the current default if nothing found
+  if [ -z "$desired_version" ]; then
+    return
+  fi
+
+  current_version="$(sdk current java 2>/dev/null | grep -E -o '[0-9][0-9.]*-[a-z]+' | head -n1)"
+
+  # 5️⃣ Install if missing
+  if [ ! -d "$SDKMAN_DIR/candidates/java/$desired_version" ]; then
+    echo "ℹ️  Java version $desired_version is not installed."
+    echo -n "Do you want to install it now? (y/n) "
+    read install_java
+    if [[ "$install_java" =~ ^[Yy]$ ]]; then
+      sdk install java "$desired_version"
+      if [ $? -ne 0 ]; then
+        echo "⚠️  Failed to install Java $desired_version."
+        return
+      fi
+    else
+      echo "⚠️  Skipping Java version switch."
+      return
+    fi
+  fi
+
+  # 6️⃣ Switch if necessary - scoped to the current shell session
+  if [ "$current_version" != "$desired_version" ]; then
+    sdk use java "$desired_version" >/dev/null
+    echo "✅ Switched to Java $desired_version"
+  fi
+}
+
+# Register hook and run on shell start
+add-zsh-hook chpwd load-sdkman-java
+load-sdkman-java
+```
+
+After saving, restart the shell:
+
+```bash
+exec zsh
+```
+
+The hook will now automatically switch to the Java version declared in `.sdkmanrc` (or inferred from `pom.xml` / `build.gradle`) whenever you change into a project directory.
 
 ## Check Setup
 

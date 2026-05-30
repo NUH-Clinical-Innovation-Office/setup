@@ -88,11 +88,17 @@ if [ -s "$PYENV_ROOT/bin/pyenv" ]; then
   export PATH="$PYENV_ROOT/bin:$PATH"
 fi
 
+export SDKMAN_DIR="$HOME/.sdkman"
+if [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
+  # Load sdkman
+  \. "$SDKMAN_DIR/bin/sdkman-init.sh"
+fi
+
 # -------------------------------
-# Node, Python & Go check (zsh-safe)
+# Node, Python, Go & Java check (zsh-safe)
 # -------------------------------
 echo ""
-echo "🔧 Checking Node.js, Python, and Go versions..."
+echo "🔧 Checking Node.js, Python, Go, and Java versions..."
 
 # Node.js
 if command -v nvm >/dev/null 2>&1; then
@@ -133,6 +139,20 @@ if command -v goenv >/dev/null 2>&1; then
   fi
 else
   echo -e "\033[0;31m❌ goenv is NOT installed\033[0m"
+  all_ok=false
+fi
+
+# Java
+if command -v sdk >/dev/null 2>&1; then
+  if command -v java >/dev/null 2>&1; then
+    JAVA_VER=$(java -version 2>&1 | head -n1)
+    echo -e "\033[0;32m✅ sdkman is installed, Java version: $JAVA_VER\033[0m"
+  else
+    echo -e "\033[0;31m❌ sdkman is installed but Java is NOT installed\033[0m"
+    all_ok=false
+  fi
+else
+  echo -e "\033[0;31m❌ sdkman is NOT installed\033[0m"
   all_ok=false
 fi
 
