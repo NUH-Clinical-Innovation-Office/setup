@@ -143,7 +143,7 @@ echo ""
 echo "🛠 Checking VS Code extensions..."
 vscode_extensions=(
   ms-vscode.sublime-keybindings
-  pkief.material-icon-theme
+  PKief.material-icon-theme
   esbenp.prettier-vscode
   dbaeumer.vscode-eslint
   inferrinizzard.prettier-sql-vscode
