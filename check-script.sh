@@ -51,6 +51,7 @@ check_command jq
 check_command openssl
 check_command code
 check_command zsh
+check_command bun
 
 # -------------------------------
 # Check Oh My Zsh plugins
@@ -181,7 +182,7 @@ vscode_extensions=(
 installed_extensions=$(code --list-extensions 2>/dev/null || echo "")
 
 for ext in "${vscode_extensions[@]}"; do
-  if echo "$installed_extensions" | grep -q "^${ext}$"; then
+  if echo "$installed_extensions" | grep -qi "^${ext}$"; then
     echo "✅ VS Code extension $ext installed"
   else
     echo "❌ VS Code extension $ext NOT installed"
