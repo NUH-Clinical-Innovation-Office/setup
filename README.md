@@ -18,6 +18,7 @@ Read the instructions carefully before executing any commands. In general it is 
   - [Why OrbStack over Docker Desktop?](#why-orbstack-over-docker-desktop)
 - [Programming Languages](#programming-languages)
   - [Node.js](#nodejs)
+    - [Bun](#bun)
     - [Auto adjusting node version base on repository](#auto-adjusting-node-version-base-on-repository)
   - [Python](#python)
     - [Auto adjusting Python version based on repository](#auto-adjusting-python-version-based-on-repository)
@@ -373,6 +374,28 @@ node -v
 
 If you see `v24.X.X`, the installation succeeded.
 
+### Bun
+
+We use [bun](https://bun.sh) as our package manager (instead of npm/yarn/pnpm).
+
+Install it:
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
+
+```bash
+exec zsh
+```
+
+Verify the install:
+
+```bash
+bun -v
+```
+
+You should see a version. Use `bun install`, `bun add`, `bun run` etc. in place of their `npm` equivalents.
+
 ### Auto adjusting node version base on repository
 
 We often are lazy people. We want our node version to change automatically according to the repository. Hence we should take advantage of our zsh. Open in vscode zsh by running the following
@@ -432,7 +455,7 @@ load-nvmrc() {
   else
     # It's a range - resolve to latest LTS version matching the range
     local versions=($(nvm ls-remote --lts | grep -o "v[0-9]\+\.[0-9]\+\.[0-9]\+" | sed 's/v//'))
-    resolved_version="$(npx -q semver -r "$desired_node_version" <<< "${versions[*]}")"
+    resolved_version="$(bunx -q semver -r "$desired_node_version" <<< "${versions[*]}")"
 
     # Fallback to latest LTS if no match found
     if [ -z "$resolved_version" ]; then
@@ -507,7 +530,7 @@ If you see Python 3.12.X, the installation succeeded.
 
 ### Auto adjusting Python version based on repository
 
-We often want Python to switch automatically depending on the repository. We can leverage pyenv’s `.python-version` support in combination with zsh. Open your zsh config:
+We often want Python to switch automatically depending on the repository. We can leverage pyenv's `.python-version` support in combination with zsh. Open your zsh config:
 
 ```bash
 code ~/.zshrc
@@ -546,13 +569,13 @@ load-pyenv-version() {
     # 2️⃣ Check pyproject.toml (Poetry or PEP 621)
     if [ -f pyproject.toml ]; then
       # Extract version and strip common specifiers (>=, ==, ^, ~, etc.)
-      pyproject_version="$(grep -E ‘python\s*=\s*".*"’ pyproject.toml | head -n1 | sed -E ‘s/.*"([^"]+)".*/\1/’ | sed -E ‘s/^[><=^~]+\s*//’)"
+      pyproject_version="$(grep -E 'python\s*=\s*".*"' pyproject.toml | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' | sed -E 's/^[><=^~]+\s*//')"
       resolved_version="$pyproject_version"
     fi
 
     # 3️⃣ Check Pipfile
     if [ -f Pipfile ]; then
-      pipfile_version="$(grep ‘python_version’ Pipfile | head -n1 | awk -F’"’ ‘{print $2}’)"
+      pipfile_version="$(grep 'python_version' Pipfile | head -n1 | awk -F'"' '{print $2}')"
       resolved_version="${resolved_version:-$pipfile_version}"
     fi
   fi
@@ -974,6 +997,7 @@ claude-qwen() {
   export ANTHROPIC_AUTH_TOKEN="$OLD_AUTH_TOKEN"
   export ANTHROPIC_MODEL="$OLD_MODEL"
   export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="$OLD_DISABLE"
+}
 ```
 
 **Usage:**
