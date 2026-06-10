@@ -805,7 +805,7 @@ SDKMAN! ships with its own `.sdkmanrc` auto-switching, but we use a custom zsh h
 code ~/.zshrc
 ```
 
-First, confirm SDKMAN! added its initialization to the bottom of your `~/.zshrc` (the installer does this automatically). It should look like this:
+First, confirm SDKMAN! added its initialization near the top of your `~/.zshrc` (the installer may does this automatically). It should look like this:
 
 ```zsh
 # sdkman
@@ -819,7 +819,7 @@ We disable SDKMAN!'s built-in auto-env so it does not clash with our hook. Edit 
 sdkman_auto_env=false
 ```
 
-Then add the following auto-switching hook at the end of your `~/.zshrc`:
+Then add the following auto-switching hook at the end of your `~/.zshrc`, it must be after the export statement to work:
 
 ```zsh
 load-sdkman-java() {
