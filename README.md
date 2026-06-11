@@ -704,7 +704,7 @@ load-goenv-version() {
 
   # 4️⃣ Resolve to an installed patch version if only major.minor given (e.g. "1.24" -> "1.24.x")
   if [[ "$desired_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
-    resolved_version="$(goenv versions --bare | grep -E "^${desired_version}\." | sort -V | tail -n1)"
+    resolved_version="$(goenv list --bare | grep -E "^${desired_version}\." | sort -V | tail -n1)"
     if [ -z "$resolved_version" ]; then
       # No installed patch version found - find the latest available patch from goenv
       resolved_version="$(goenv install --list | grep -E "^\s*${desired_version}\." | awk '{print $1}' | sort -V | tail -n1)"
@@ -716,7 +716,7 @@ load-goenv-version() {
   current_version="$(goenv version-name)"
 
   # 5️⃣ Install if missing
-  if ! goenv versions --bare | grep -q "^${resolved_version}$"; then
+  if ! goenv list --bare | grep -q "^${resolved_version}$"; then
     echo "ℹ️  Go version $resolved_version is not installed."
     # Use echo -n to keep the prompt on the same line, then read the response
     echo -n "Do you want to install it now? (y/n) "
