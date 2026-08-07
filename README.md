@@ -823,73 +823,61 @@ Then add the following auto-switching hook at the end of your `~/.zshrc`, it mus
 
 ```zsh
 load-sdkman-java() {
-  # Ensure sdkman is available
-  if ! type sdk &> /dev/null; then
-    echo "⚠️  SDKMAN! is not installed. Please install SDKMAN! first."
-    return
+  type sdk &>/dev/null || return
+  [[ -n "$SDKMAN_DIR" ]] || return
+
+  [[ -f .sdkmanrc || -f pom.xml || -f build.gradle || -f build.gradle.kts ]] || return
+
+  local desired major gradle_file
+
+  # 1. .sdkmanrc (exact version, wins)
+  if [[ -f .sdkmanrc ]]; then
+    desired="$(grep -E '^[[:space:]]*java[[:space:]]*=' .sdkmanrc \
+      | head -1 | sed -E 's/.*=[[:space:]]*//' | tr -d '[:space:]')"
   fi
 
-  # Only proceed if project declares a Java version
-  if [ ! -f .sdkmanrc ] && [ ! -f pom.xml ] && [ ! -f build.gradle ] && [ ! -f build.gradle.kts ]; then
-    return
+  # 2. Gradle version catalog
+  if [[ -z "$desired" && -z "$major" && -f gradle/libs.versions.toml ]]; then
+    major="$(grep -E '^[[:space:]]*java[[:space:]]*=' gradle/libs.versions.toml \
+      | head -1 | grep -E -o '[0-9]+' | head -1)"
   fi
 
-  local desired_version current_version
-
-  # 1️⃣ Check .sdkmanrc for the java entry
-  if [ -f "$(pwd)/.sdkmanrc" ]; then
-    desired_version="$(grep -E '^\s*java\s*=' .sdkmanrc | head -n1 | sed -E 's/^\s*java\s*=\s*//' | tr -d '[:space:]')"
-  fi
-
-  # 2️⃣ Check Maven pom.xml for <maven.compiler.release> / <java.version>
-  if [ -z "$desired_version" ] && [ -f pom.xml ]; then
-    local major
-    major="$(grep -E -o '<(maven\.compiler\.release|maven\.compiler\.target|java\.version)>[0-9]+' pom.xml | head -n1 | grep -E -o '[0-9]+$')"
-    if [ -n "$major" ]; then
-      # Resolve the major version to the latest installed Temurin build
-      desired_version="$(sdk list java 2>/dev/null | grep -E -o "${major}\.[0-9.]+-tem" | head -n1)"
+  # 3. Gradle build file literal
+  if [[ -z "$desired" && -z "$major" ]]; then
+    [[ -f build.gradle.kts ]] && gradle_file=build.gradle.kts
+    [[ -f build.gradle ]] && gradle_file=build.gradle
+    if [[ -n "$gradle_file" ]]; then
+      major="$(grep -E -o '(sourceCompatibility|targetCompatibility|languageVersion|JavaLanguageVersion\.of|jvmToolchain)[^0-9]*[0-9]+' "$gradle_file" \
+        | head -1 | grep -E -o '[0-9]+$')"
     fi
   fi
 
-  # 3️⃣ Check Gradle build files for sourceCompatibility / languageVersion
-  if [ -z "$desired_version" ] && { [ -f build.gradle ] || [ -f build.gradle.kts ]; }; then
-    local gradle_file major
-    [ -f build.gradle ] && gradle_file="build.gradle" || gradle_file="build.gradle.kts"
-    major="$(grep -E -o '(sourceCompatibility|languageVersion|JavaLanguageVersion\.of)\D*[0-9]+' "$gradle_file" | head -n1 | grep -E -o '[0-9]+$')"
-    if [ -n "$major" ]; then
-      desired_version="$(sdk list java 2>/dev/null | grep -E -o "${major}\.[0-9.]+-tem" | head -n1)"
-    fi
+  # 4. Maven
+  if [[ -z "$desired" && -z "$major" && -f pom.xml ]]; then
+    major="$(grep -E -o '<(maven\.compiler\.release|maven\.compiler\.target|java\.version)>[0-9]+' pom.xml \
+      | head -1 | grep -E -o '[0-9]+$')"
   fi
 
-  # 4️⃣ Fallback to the current default if nothing found
-  if [ -z "$desired_version" ]; then
+  # Resolve major -> newest installed build (prefer tem, then any vendor)
+  if [[ -z "$desired" && -n "$major" ]]; then
+    desired="$(ls "$SDKMAN_DIR/candidates/java" 2>/dev/null \
+      | grep -E "^${major}(\.[0-9]+)*-tem$" | sort -V | tail -1)"
+    [[ -z "$desired" ]] && desired="$(ls "$SDKMAN_DIR/candidates/java" 2>/dev/null \
+      | grep -E "^${major}(\.[0-9]+)*-[a-z]+$" | sort -V | tail -1)"
+  fi
+
+  [[ -n "$desired" ]] || return
+
+  if [[ ! -d "$SDKMAN_DIR/candidates/java/$desired" ]]; then
+    print "ℹ️  java $desired not installed → sdk install java $desired"
     return
   fi
 
-  current_version="$(sdk current java 2>/dev/null | grep -E -o '[0-9][0-9.]*-[a-z]+' | head -n1)"
+  local current="${${(f)"$(sdk current java 2>/dev/null)"}[1]##* }"
+  [[ "$current" == "$desired" ]] && return
 
-  # 5️⃣ Install if missing
-  if [ ! -d "$SDKMAN_DIR/candidates/java/$desired_version" ]; then
-    echo "ℹ️  Java version $desired_version is not installed."
-    echo -n "Do you want to install it now? (y/n) "
-    read install_java
-    if [[ "$install_java" =~ ^[Yy]$ ]]; then
-      sdk install java "$desired_version"
-      if [ $? -ne 0 ]; then
-        echo "⚠️  Failed to install Java $desired_version."
-        return
-      fi
-    else
-      echo "⚠️  Skipping Java version switch."
-      return
-    fi
-  fi
-
-  # 6️⃣ Switch if necessary - scoped to the current shell session
-  if [ "$current_version" != "$desired_version" ]; then
-    sdk use java "$desired_version" >/dev/null
-    echo "✅ Switched to Java $desired_version"
-  fi
+  sdk use java "$desired" >/dev/null && print "✅ Java $desired"
+  typeset -U path
 }
 
 # Register hook and run on shell start
