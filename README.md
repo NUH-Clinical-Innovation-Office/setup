@@ -418,7 +418,7 @@ Install bun and make it the default version:
 mise use -g bun@1
 ```
 
-Like Node.js, mise switches the bun version per project, from `mise.toml`, `.bun-version` or the `packageManager` field in `package.json` (e.g. `"packageManager": "bun@1.4.2"`).
+Like Node.js, mise switches the bun version per project, from `mise.toml`, `.bun-version` or the `packageManager` field in `package.json` (e.g. `"packageManager": "bun@1.4.2"`). If that version is not installed yet, mise prints `missing: bun@<version>` and installs it the first time you run `bun` (or run `mise install`).
 
 Verify the install:
 
