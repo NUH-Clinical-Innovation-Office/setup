@@ -17,15 +17,15 @@ Read the instructions carefully before executing any commands. In general it is 
   - [Installing OrbStack](#installing-orbstack)
   - [Why OrbStack over Docker Desktop?](#why-orbstack-over-docker-desktop)
 - [Programming Languages](#programming-languages)
+  - [Installing mise](#installing-mise)
   - [Node.js](#nodejs)
     - [Bun](#bun)
-    - [Auto adjusting node version base on repository](#auto-adjusting-node-version-base-on-repository)
   - [Python](#python)
-    - [Auto adjusting Python version based on repository](#auto-adjusting-python-version-based-on-repository)
   - [Go](#go)
-    - [Auto adjusting Go version based on repository](#auto-adjusting-go-version-based-on-repository)
   - [Java](#java)
-    - [Auto adjusting Java version based on repository](#auto-adjusting-java-version-based-on-repository)
+  - [Auto adjusting versions based on repository](#auto-adjusting-versions-based-on-repository)
+    - [Reading versions from build files](#reading-versions-from-build-files)
+  - [Migrating from nvm, pyenv, goenv and SDKMAN!](#migrating-from-nvm-pyenv-goenv-and-sdkman)
 - [Check Setup](#check-setup)
 - [AI Tools](#ai-tools)
   - [Privacy Considerations by Tool](#privacy-considerations-by-tool)
@@ -317,7 +317,7 @@ brew uninstall --cask docker
 
 ## Programming Languages
 
-Within an organization, you will often work with multiple programming languages. It is important to install each language using a version manager to ensure consistency and avoid conflicts between projects. If you already have your own preferred language version manager, go ahead and use it. However, if you have no idea you can install the following depending on the programming language you are using.
+Within an organization, you will often work with multiple programming languages. It is important to install each language using a version manager to ensure consistency and avoid conflicts between projects. If you already have your own preferred language version manager, go ahead and use it. However, if you have no idea you can follow the instructions below.
 
 If you are working in NUH Clinical Innovation Office, install all of the below.
 
@@ -329,41 +329,71 @@ When you install a language directly (e.g. downloading Node.js or Python from th
 - **No easy switching**: Upgrading for one project can break another. Downgrading is painful and error-prone.
 - **Inconsistency across the team**: If everyone installs different versions manually, bugs appear on some machines but not others.
 
-A **version manager** (like `nvm` for Node.js, `pyenv` for Python, `goenv` for Go, or `sdkman` for Java) solves all of this by letting you:
+A **version manager** solves all of this by letting you:
 
 - Install and store **multiple versions** of a language side by side
 - **Switch between versions** instantly per project or directory
-- **Automatically use the right version** when you enter a project folder (via `.nvmrc`, `.python-version`, `.go-version`, or `.sdkmanrc` files)
+- **Automatically use the right version** when you enter a project folder (via `mise.toml`, `.nvmrc`, `.python-version`, `.go-version`, or `.sdkmanrc` files, or build files such as `package.json`)
 - Ensure every developer on the team runs the **exact same version**, eliminating "works on my machine" issues
 
 Think of it this way: a direct install is like having only one pair of shoes, while a version manager is like having a shoe rack — you pick the right pair for the right occasion.
 
-## Node.js
+### Installing mise
 
-For Node.js we will use [nvm](https://github.com/nvm-sh/nvm) as our version manager.
+We use [mise](https://mise.jdx.dev) as our single version manager for Node.js, Python, Go and Java (including Maven and Gradle). One tool replaces `nvm`, `pyenv`, `goenv` and `SDKMAN!`, and it keeps your terminal fast: activating mise takes a few milliseconds, whereas loading all four separate version managers can add over a second to every new terminal.
 
-In a terminal, execute the following commands:
+In a terminal, execute the following command:
 
 ```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | zsh
+brew install mise
 ```
+
+Open your zsh config:
+
+```bash
+code ~/.zshrc
+```
+
+Add the following at the **very end** of the file:
+
+```zsh
+# ─── Tool Initializations ────────────────────────────────────────────────────
+
+# mise manages node, python, go, java, gradle and maven, and auto-switches
+# versions on cd from mise.toml, .nvmrc, .python-version, .go-version, .sdkmanrc
+# (build files like package.json are handled by the hook further below)
+export PATH="$PATH:$HOME/go/bin"
+eval "$(mise activate zsh)"
+```
+
+`$HOME/go/bin` is where binaries installed with `go install` end up, so they are available on your `PATH`.
+
+Keep the mise block (and the hook from [Reading versions from build files](#reading-versions-from-build-files)) as the **last** lines of `~/.zshrc`. If a line after it changes `PATH`, mise runs twice on every new terminal and prints its warnings twice. Installers such as bun add their lines to the end of the file, so move the mise block back to the end after installing them.
+
+Next, allow mise to read the version files used by other version managers (`.nvmrc`, `.python-version`, `.go-version`, `.sdkmanrc`), so existing projects work without changes:
+
+```bash
+mise settings add idiomatic_version_file_enable_tools node
+mise settings add idiomatic_version_file_enable_tools python
+mise settings add idiomatic_version_file_enable_tools go
+mise settings add idiomatic_version_file_enable_tools java
+```
+
+Then restart the shell and verify the installation:
 
 ```bash
 exec zsh
+mise --version
 ```
 
-Then run the following command:
+You should see a version printed, e.g., `2026.X.X macos-arm64`. If anything looks wrong later on, `mise doctor` will diagnose common problems.
+
+### Node.js
+
+Install Node.js and make it the default version:
 
 ```bash
-nvm -v
-```
-
-You should see a version.
-
-Now let's install a node version:
-
-```bash
-nvm install 24
+mise use -g node@24
 ```
 
 When the installation is finished, run:
@@ -374,7 +404,7 @@ node -v
 
 If you see `v24.X.X`, the installation succeeded.
 
-### Bun
+#### Bun
 
 We use [bun](https://bun.sh) as our package manager (instead of npm/yarn/pnpm).
 
@@ -383,6 +413,8 @@ Install it:
 ```bash
 curl -fsSL https://bun.sh/install | bash
 ```
+
+The installer adds a few lines to the end of `~/.zshrc`. Move the mise block back below them so it stays last (see [Installing mise](#installing-mise)).
 
 ```bash
 exec zsh
@@ -396,128 +428,12 @@ bun -v
 
 You should see a version. Use `bun install`, `bun add`, `bun run` etc. in place of their `npm` equivalents.
 
-### Auto adjusting node version base on repository
-
-We often are lazy people. We want our node version to change automatically according to the repository. Hence we should take advantage of our zsh. Open in vscode zsh by running the following
-
-```bash
-code ~/.zshrc
-```
-
-add the following at the end of the file
-
-```zsh
-# ─── Tool Initializations ────────────────────────────────────────────────────
-
-# nvm
-export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-
-# ─── Auto Version Switching ───────────────────────────────────────────────────
-
-autoload -U add-zsh-hook
-
-load-nvmrc() {
-  # Ensure nvm is available
-  if ! type nvm &> /dev/null; then
-    echo "⚠️ nvm is not installed. Please install nvm first."
-    return
-  fi
-
-  # Only proceed if either .nvmrc or package.json exists
-  if [ ! -f .nvmrc ] && [ ! -f package.json ]; then
-    return
-  fi
-
-  local nvmrc_path desired_node_version current_node_version resolved_version
-
-  # 1️⃣ Check for .nvmrc
-  nvmrc_path="$(nvm_find_nvmrc)"
-  if [ -n "$nvmrc_path" ]; then
-    desired_node_version="$(cat "$nvmrc_path")"
-  else
-    # 2️⃣ Check package.json for engines.node
-    if [ -f package.json ]; then
-      desired_node_version="$(node -pe "require('./package.json').engines?.node || ''")"
-    fi
-  fi
-
-  # 3️⃣ Fallback to nvm default if nothing found
-  if [ -z "$desired_node_version" ]; then
-    desired_node_version="$(nvm version default)"
-  fi
-
-  # 4️⃣ Determine if it's an exact version or a range
-  if [[ "$desired_node_version" =~ ^v?[0-9]+(\.[0-9]+(\.[0-9]+)?)?$ ]]; then
-    # It's an exact version - use it directly
-    resolved_version="$desired_node_version"
-  else
-    # It's a range - resolve to latest LTS version matching the range
-    local versions=($(nvm ls-remote --lts | grep -o "v[0-9]\+\.[0-9]\+\.[0-9]\+" | sed 's/v//'))
-    resolved_version="$(bunx -q semver -r "$desired_node_version" <<< "${versions[*]}")"
-
-    # Fallback to latest LTS if no match found
-    if [ -z "$resolved_version" ]; then
-      resolved_version="${versions[-1]}"
-    fi
-  fi
-
-  current_node_version="$(nvm current)"
-
-  # 5️⃣ Install if missing
-  if [ "$(nvm version "$resolved_version")" = "N/A" ]; then
-    echo "ℹ️  Node version $resolved_version is not installed."
-    read "install_node?Do you want to install it now? (y/n) "
-    if [[ "$install_node" =~ ^[Yy]$ ]]; then
-      nvm install "$resolved_version"
-    else
-      echo "⚠️  Skipping Node version switch."
-      return
-    fi
-  fi
-
-  # 6️⃣ Switch if necessary
-  if [ "$current_node_version" != "v$resolved_version" ] && [ "$current_node_version" != "$resolved_version" ]; then
-    nvm use "$resolved_version" --silent
-    echo "✅ Switched to Node $resolved_version"
-  fi
-}
-
-# Register hook and run on shell start
-add-zsh-hook chpwd load-nvmrc
-load-nvmrc
-```
-
 ### Python
 
-For Python we will use [pyenv](https://github.com/pyenv/pyenv) as our version manager.
-
-In a terminal, execute the following commands:
+Install Python and make it the default version:
 
 ```bash
-# Install pyenv via Homebrew
-brew install pyenv
-```
-
-Then, restart the shell:
-
-```bash
-exec zsh
-```
-
-Verify the installation:
-
-```bash
-pyenv -v
-```
-
-You should see a version printed, e.g., pyenv 2.X.X.
-
-Now let's install a Python version:
-
-```bash
-pyenv install 3.12
+mise use -g python@3.12
 ```
 
 When the installation is finished, run:
@@ -526,134 +442,16 @@ When the installation is finished, run:
 python -V
 ```
 
-If you see Python 3.12.X, the installation succeeded.
+If you see `Python 3.12.X`, the installation succeeded.
 
-### Auto adjusting Python version based on repository
-
-We often want Python to switch automatically depending on the repository. We can leverage pyenv's `.python-version` support in combination with zsh. Open your zsh config:
-
-```bash
-code ~/.zshrc
-```
-
-First, add the pyenv initialization in the tool initializations block (after nvm):
-
-```zsh
-# pyenv
-export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init - zsh)"
-```
-
-Then add the following auto-switching hook at the end of the file:
-
-```zsh
-load-pyenv-version() {
-  # Ensure pyenv is available
-  if ! type pyenv &> /dev/null; then
-    echo "⚠️  pyenv is not installed. Please install pyenv first."
-    return
-  fi
-
-  # Only proceed if project declares a Python version
-  if [ ! -f .python-version ] && [ ! -f pyproject.toml ] && [ ! -f Pipfile ]; then
-    return
-  fi
-
-  local resolved_version current_version pyproject_version pipfile_version
-
-  # 1️⃣ Check .python-version
-  if [ -f "$(pwd)/.python-version" ]; then
-    resolved_version="$(cat "$(pwd)/.python-version")"
-  else
-    # 2️⃣ Check pyproject.toml (Poetry or PEP 621)
-    if [ -f pyproject.toml ]; then
-      # Extract version and strip common specifiers (>=, ==, ^, ~, etc.)
-      pyproject_version="$(grep -E 'python\s*=\s*".*"' pyproject.toml | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' | sed -E 's/^[><=^~]+\s*//')"
-      resolved_version="$pyproject_version"
-    fi
-
-    # 3️⃣ Check Pipfile
-    if [ -f Pipfile ]; then
-      pipfile_version="$(grep 'python_version' Pipfile | head -n1 | awk -F'"' '{print $2}')"
-      resolved_version="${resolved_version:-$pipfile_version}"
-    fi
-  fi
-
-  # 4️⃣ Fallback to pyenv global
-  resolved_version="${resolved_version:-$(pyenv global)}"
-  current_version="$(pyenv version-name)"
-
-  # 5️⃣ Install if missing
-  if ! pyenv versions --bare | grep -q "^$resolved_version"; then
-    echo "ℹ️  Python version $resolved_version is not installed."
-    read "install_py?Do you want to install it now? (y/n) "
-    if [[ "$install_py" =~ ^[Yy]$ ]]; then
-      pyenv install "$resolved_version"
-    else
-      echo "⚠️  Skipping Python version switch."
-      return
-    fi
-  fi
-
-  # 6️⃣ Switch if necessary
-  if [ "$current_version" != "$resolved_version" ]; then
-    pyenv local "$resolved_version"
-    echo "✅ Switched to Python $resolved_version"
-  fi
-}
-
-# Register hook and run on shell start
-add-zsh-hook chpwd load-pyenv-version
-load-pyenv-version
-```
+mise installs prebuilt Python binaries by default, which is much faster than compiling. If a package with C extensions misbehaves, you can make mise compile Python from source instead (like `pyenv` does) with `mise settings set python.compile true`.
 
 ### Go
 
-For Go we will use [goenv](https://github.com/go-nv/goenv) as our version manager.
-
-In a terminal, execute the following commands:
+Install Go and make it the default version:
 
 ```bash
-brew update
-brew install goenv
-```
-
-Then, open your zsh config and add goenv initialization in the tool initializations block (after pyenv):
-
-```bash
-code ~/.zshrc
-```
-
-Add the following:
-
-```zsh
-# goenv
-export GOENV_ROOT="$HOME/.goenv"
-export PATH="$GOENV_ROOT/shims:$GOENV_ROOT/bin:$PATH"
-export PATH="$PATH:$HOME/go/bin"
-eval "$(goenv init - zsh)"
-```
-
-Then restart the shell:
-
-```bash
-exec zsh
-```
-
-Verify the installation:
-
-```bash
-goenv -v
-```
-
-You should see a version printed, e.g., goenv 2.X.X.
-
-Now let's install a Go version:
-
-```bash
-goenv install 1.24.0
-goenv global 1.24.0
+mise use -g go@1.24
 ```
 
 When the installation is finished, run:
@@ -664,234 +462,287 @@ go version
 
 If you see `go version go1.24.X`, the installation succeeded.
 
-#### Auto adjusting Go version based on repository
+### Java
 
-We want Go to switch automatically depending on the repository. We can leverage goenv's `.go-version` support combined with a custom zsh hook that also reads the `go` directive from `go.mod`. Open your zsh config:
-
-```bash
-code ~/.zshrc
-```
-
-Add the following auto-switching hook at the end of the file:
-
-```zsh
-load-goenv-version() {
-  # Ensure goenv is available
-  if ! type goenv &> /dev/null; then
-    echo "⚠️  goenv is not installed. Please install goenv first."
-    return
-  fi
-
-  # Only proceed if project declares a Go version
-  if [ ! -f .go-version ] && [ ! -f go.mod ]; then
-    return
-  fi
-
-  local desired_version resolved_version current_version
-
-  # 1️⃣ Check .go-version
-  if [ -f "$(pwd)/.go-version" ]; then
-    desired_version="$(cat "$(pwd)/.go-version")"
-  else
-    # 2️⃣ Check go.mod for go directive
-    if [ -f go.mod ]; then
-      desired_version="$(grep -E '^go [0-9]' go.mod | head -n1 | awk '{print $2}')"
-    fi
-  fi
-
-  # 3️⃣ Fallback to goenv global
-  desired_version="${desired_version:-$(goenv global)}"
-
-  # 4️⃣ Resolve to an installed patch version if only major.minor given (e.g. "1.24" -> "1.24.x")
-  if [[ "$desired_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
-    resolved_version="$(goenv list --bare | grep -E "^${desired_version}\." | sort -V | tail -n1)"
-    if [ -z "$resolved_version" ]; then
-      # No installed patch version found - find the latest available patch from goenv
-      resolved_version="$(goenv install --list | grep -E "^\s*${desired_version}\." | awk '{print $1}' | sort -V | tail -n1)"
-    fi
-  else
-    resolved_version="$desired_version"
-  fi
-
-  current_version="$(goenv version-name)"
-
-  # 5️⃣ Install if missing
-  if ! goenv list --bare | grep -q "^${resolved_version}$"; then
-    echo "ℹ️  Go version $resolved_version is not installed."
-    # Use echo -n to keep the prompt on the same line, then read the response
-    echo -n "Do you want to install it now? (y/n) "
-    read install_go
-    if [[ "$install_go" =~ ^[Yy]$ ]]; then
-      goenv install "$resolved_version"
-      if [ $? -ne 0 ]; then
-        echo "⚠️  Failed to install Go $resolved_version."
-        return
-      fi
-    else
-      echo "⚠️  Skipping Go version switch."
-      return
-    fi
-  fi
-
-  # 6️⃣ Switch if necessary - use goenv shell to set version for the current shell session only
-  if [ "$current_version" != "$resolved_version" ]; then
-    goenv shell "$resolved_version"
-    echo "✅ Switched to Go $resolved_version"
-  fi
-}
-
-# Register hook and run on shell start
-add-zsh-hook chpwd load-goenv-version
-load-goenv-version
-```
-
-After saving, restart the shell:
+Install Java and make it the default version. We use a [Temurin](https://adoptium.net/) (Eclipse Adoptium) build, the most widely used free OpenJDK distribution:
 
 ```bash
-exec zsh
+mise use -g java@temurin-25
 ```
 
-The hook will now automatically switch to the Go version declared in `.go-version` or the `go` directive in `go.mod` whenever you change into a project directory.
-
-## Java
-
-For Java we will use [SDKMAN!](https://sdkman.io/) as our version manager. SDKMAN! manages not only the JDK itself but the wider JVM ecosystem — Maven, Gradle, Kotlin, Scala, and more — so it is the natural choice for Java projects.
-
-In a terminal, execute the following command:
-
-```bash
-curl -s "https://get.sdkman.io" | bash
-```
-
-Then, restart the shell:
-
-```bash
-exec zsh
-```
-
-Verify the installation:
-
-```bash
-sdk version
-```
-
-You should see a version printed, e.g., `SDKMAN 5.X.X`.
-
-Now let's install a Java version. We use a [Temurin](https://adoptium.net/) (Eclipse Adoptium) build, the most widely used free OpenJDK distribution:
-
-```bash
-sdk install java 25.0.3-tem
-```
-
-You can list all available Java versions with `sdk list java`. When the installation is finished, run:
+You can list all available Java versions with `mise ls-remote java`. When the installation is finished, run:
 
 ```bash
 java -version
 ```
 
-If you see `openjdk version "25.0.3"`, the installation succeeded.
+If you see `openjdk version "25.X.X"`, the installation succeeded.
 
-### Auto adjusting Java version based on repository
+mise can also manage Maven and Gradle:
 
-We want Java to switch automatically depending on the repository. SDKMAN! supports a `.sdkmanrc` file that declares the JDK (and other SDKs) a project needs. A `.sdkmanrc` looks like this:
-
-```
-java=25.0.3-tem
+```bash
+mise use -g maven@3 gradle@9
 ```
 
-SDKMAN! ships with its own `.sdkmanrc` auto-switching, but we use a custom zsh hook to match the behaviour of our other version managers — prompting before installing a missing version and falling back to the JDK declared in `pom.xml` or `build.gradle`. Open your zsh config:
+Most projects ship their own `./mvnw` or `./gradlew` wrapper, which downloads the exact Maven or Gradle version the project needs, so the global version mostly matters for creating new projects.
+
+### Auto adjusting versions based on repository
+
+Once mise is activated in your `~/.zshrc`, it automatically switches versions whenever you `cd` into a project folder. mise looks for the following files in the project folder (and its parent folders):
+
+| File              | Tools                  | Example                |
+| ----------------- | ---------------------- | ---------------------- |
+| `mise.toml`       | any                    | see below              |
+| `.nvmrc`          | Node.js                | `24`                   |
+| `.node-version`   | Node.js                | `24`                   |
+| `.python-version` | Python                 | `3.12`                 |
+| `.go-version`     | Go                     | `1.24.0`               |
+| `.java-version`   | Java                   | `temurin-25`           |
+| `.tool-versions`  | any                    | `node 24`              |
+| `.sdkmanrc`       | Java                   | `java=25.0.3-tem`      |
+
+For new projects, prefer a single `mise.toml` in the root of the repository. Create one by running `mise use` (without `-g`) inside the project folder:
+
+```bash
+mise use node@24 python@3.12
+```
+
+This produces a `mise.toml` like:
+
+```toml
+[tools]
+node = "24"
+python = "3.12"
+```
+
+Commit this file so everyone on the team uses the same versions. When a teammate enters the project for the first time, they run `mise install` to install any missing versions.
+
+#### Reading versions from build files
+
+Many projects only declare their version in a build file, which mise does **not** read. We add a zsh hook that fills this gap. When no version file above is found, it falls back to:
+
+| Tool    | Build files (checked in order)                                         | Example                               |
+| ------- | ---------------------------------------------------------------------- | ------------------------------------- |
+| Node.js | `package.json` `engines.node`                                          | `"node": ">=20"`                      |
+| Python  | `pyproject.toml` (uv, Poetry, PEP 621), then `Pipfile`                 | `requires-python = ">=3.12"` or Poetry's `python = "^3.12"` |
+| Go      | `go.mod` `toolchain` line, then `go` directive                         | `go 1.24`                             |
+| Java    | Gradle (`gradle/libs.versions.toml`, `build.gradle(.kts)`), then Maven `pom.xml` | `jvmToolchain(21)`, `<java.version>25</java.version>` |
+
+How the hook behaves:
+
+- A version file (`.nvmrc`, `mise.toml`, ...) always wins over a build file. So does `devEngines.runtime` in `package.json`, which mise reads itself.
+- Node.js ranges such as `>=20` resolve to the newest **already installed** version that matches. Python ranges use the lowest version mentioned (`>=3.12` becomes `3.12`). Java uses the [Temurin](https://adoptium.net/) build of the major version found (old style `1.8` / `VERSION_1_8` means Java 8).
+- uv projects usually also have a `.python-version` file (created by `uv python pin`), which mise reads directly.
+- Gradle settings are checked before Maven, and the Gradle version catalog before `build.gradle(.kts)`. Maven reads `maven.compiler.release`, `maven.compiler.target`, `maven.compiler.source`, `java.version` or the compiler plugin's `<release>`.
+- If the version is not installed, it asks whether to install it. If you answer no, it will not ask again for that version until you open a new terminal.
+- When you leave the project, your default versions come back.
+- Until mise 2026.11.0, mise itself also reads the `go` line in `go.mod` and prints a `deprecated [idiomatic.go.mod.go-directive]` warning on every `cd`. Adding a `toolchain go1.X.Y` line to `go.mod` removes it. The hook keeps working after mise stops reading `go.mod`.
+
+Open your zsh config:
 
 ```bash
 code ~/.zshrc
 ```
 
-First, confirm SDKMAN! added its initialization near the top of your `~/.zshrc` (the installer may does this automatically). It should look like this:
+Add the following at the end of the file, directly after the `eval "$(mise activate zsh)"` line:
 
 ```zsh
-# sdkman
-export SDKMAN_DIR="$HOME/.sdkman"
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-```
+# ─── Auto Version Switching ──────────────────────────────────────────────────
 
-We disable SDKMAN!'s built-in auto-env so it does not clash with our hook. Edit `~/.sdkman/etc/config` and ensure:
+# mise already switches versions from mise.toml and version files (.nvmrc,
+# .python-version, .go-version, .sdkmanrc). This hook adds the fallbacks mise
+# does not read: package.json, pyproject.toml, Pipfile, go.mod, Maven and Gradle.
 
-```
-sdkman_auto_env=false
-```
+autoload -U add-zsh-hook
 
-Then add the following auto-switching hook at the end of your `~/.zshrc`, it must be after the export statement to work:
+# Versions the user declined to install in this shell, so we only ask once
+typeset -gA _mise_declined
+# Node engines range -> newest matching installed version
+typeset -gA _mise_range_cache
 
-```zsh
-load-sdkman-java() {
-  type sdk &>/dev/null || return
-  [[ -n "$SDKMAN_DIR" ]] || return
+# Succeeds if directory $1 pins tool $2 in a file mise reads itself
+_mise_has_native() {
+  local dir=$1 tool=$2 f
+  case $tool in
+    node)   [[ -f $dir/.nvmrc || -f $dir/.node-version ]] && return 0
+            # mise reads package.json devEngines.runtime (name "node") itself
+            [[ -f $dir/package.json ]] && grep -q '"devEngines"' $dir/package.json \
+              && node -e "const r = require(process.argv[1]).devEngines?.runtime;
+                          process.exit([r].flat().some(x => x?.name === 'node') ? 0 : 1)" \
+                   "$dir/package.json" 2>/dev/null && return 0 ;;
+    python) [[ -f $dir/.python-version ]] && return 0 ;;
+    go)     [[ -f $dir/.go-version ]] && return 0 ;;
+    java)   [[ -f $dir/.java-version ]] && return 0
+            [[ -f $dir/.sdkmanrc ]] && grep -qE '^[[:space:]]*java[[:space:]]*=' $dir/.sdkmanrc && return 0 ;;
+  esac
+  for f in mise.toml .mise.toml mise.local.toml .config/mise.toml; do
+    [[ -f $dir/$f ]] && grep -qE "^[[:space:]]*\"?$tool\"?[[:space:]]*=" $dir/$f && return 0
+  done
+  [[ -f $dir/.tool-versions ]] && grep -qE "^$tool[[:space:]]" $dir/.tool-versions
+}
 
-  [[ -f .sdkmanrc || -f pom.xml || -f build.gradle || -f build.gradle.kts ]] || return
+# Each _mise_detect_<tool> reads the build files in directory $1 and sets REPLY
+# to the version found (empty if none)
 
-  local desired major gradle_file
+_mise_detect_node() {
+  REPLY=
+  [[ -f $1/package.json ]] || return
+  local range match
+  local -a installed
+  range="$(node -pe "require(process.argv[1]).engines?.node || ''" "$1/package.json" 2>/dev/null)"
+  [[ -n $range ]] || return
 
-  # 1. .sdkmanrc (exact version, wins)
-  if [[ -f .sdkmanrc ]]; then
-    desired="$(grep -E '^[[:space:]]*java[[:space:]]*=' .sdkmanrc \
-      | head -1 | sed -E 's/.*=[[:space:]]*//' | tr -d '[:space:]')"
-  fi
-
-  # 2. Gradle version catalog
-  if [[ -z "$desired" && -z "$major" && -f gradle/libs.versions.toml ]]; then
-    major="$(grep -E '^[[:space:]]*java[[:space:]]*=' gradle/libs.versions.toml \
-      | head -1 | grep -E -o '[0-9]+' | head -1)"
-  fi
-
-  # 3. Gradle build file literal
-  if [[ -z "$desired" && -z "$major" ]]; then
-    [[ -f build.gradle.kts ]] && gradle_file=build.gradle.kts
-    [[ -f build.gradle ]] && gradle_file=build.gradle
-    if [[ -n "$gradle_file" ]]; then
-      major="$(grep -E -o '(sourceCompatibility|targetCompatibility|languageVersion|JavaLanguageVersion\.of|jvmToolchain)[^0-9]*[0-9]+' "$gradle_file" \
-        | head -1 | grep -E -o '[0-9]+$')"
-    fi
-  fi
-
-  # 4. Maven
-  if [[ -z "$desired" && -z "$major" && -f pom.xml ]]; then
-    major="$(grep -E -o '<(maven\.compiler\.release|maven\.compiler\.target|java\.version)>[0-9]+' pom.xml \
-      | head -1 | grep -E -o '[0-9]+$')"
-  fi
-
-  # Resolve major -> newest installed build (prefer tem, then any vendor)
-  if [[ -z "$desired" && -n "$major" ]]; then
-    desired="$(ls "$SDKMAN_DIR/candidates/java" 2>/dev/null \
-      | grep -E "^${major}(\.[0-9]+)*-tem$" | sort -V | tail -1)"
-    [[ -z "$desired" ]] && desired="$(ls "$SDKMAN_DIR/candidates/java" 2>/dev/null \
-      | grep -E "^${major}(\.[0-9]+)*-[a-z]+$" | sort -V | tail -1)"
-  fi
-
-  [[ -n "$desired" ]] || return
-
-  if [[ ! -d "$SDKMAN_DIR/candidates/java/$desired" ]]; then
-    print "ℹ️  java $desired not installed → sdk install java $desired"
+  # Exact version (e.g. 24 or 24.1.0): use as is
+  if [[ $range =~ '^v?[0-9]+(\.[0-9]+){0,2}$' ]]; then
+    REPLY=${range#v}
     return
   fi
 
-  local current="${${(f)"$(sdk current java 2>/dev/null)"}[1]##* }"
-  [[ "$current" == "$desired" ]] && return
+  # Range (e.g. >=20): newest installed version that satisfies it
+  # (cached, as bunx is slow to run on every cd)
+  installed=(${(f)"$(mise ls --installed --json node 2>/dev/null | grep -oE '"version": *"[0-9][^"]*"' | grep -oE '[0-9][^"]*')"})
+  local key="$range|$installed"
+  if [[ -z ${_mise_range_cache[$key]+set} ]]; then
+    (( $#installed )) && match="$(bunx -q semver -r "$range" $installed 2>/dev/null | tail -n1)"
+    _mise_range_cache[$key]=$match
+  fi
+  match=${_mise_range_cache[$key]}
 
-  sdk use java "$desired" >/dev/null && print "✅ Java $desired"
-  typeset -U path
+  # Nothing installed matches: fall back to the lowest major version in the range
+  REPLY=${match:-$(grep -oE '[0-9]+' <<< $range | head -n1)}
+}
+
+_mise_detect_python() {
+  REPLY=
+  if [[ -f $1/pyproject.toml ]]; then
+    # uv / Poetry 2 / PEP 621 (requires-python = ">=3.12") or Poetry 1 (python = "^3.12")
+    REPLY="$(grep -E "^[[:space:]]*(requires-)?python[[:space:]]*=[[:space:]]*[\"']" $1/pyproject.toml \
+      | head -n1 | cut -d= -f2- | grep -oE '[0-9]+(\.[0-9]+)*' | head -n1)"
+  fi
+  if [[ -z $REPLY && -f $1/Pipfile ]]; then
+    REPLY="$(grep -E 'python_version' $1/Pipfile | head -n1 | awk -F'"' '{print $2}')"
+  fi
+}
+
+_mise_detect_go() {
+  REPLY=
+  [[ -f $1/go.mod ]] || return
+  # Prefer the toolchain line (exact version), else the go directive
+  REPLY="$(grep -E '^toolchain go[0-9]' $1/go.mod | head -n1 | sed 's/^toolchain go//')"
+  [[ -n $REPLY ]] || REPLY="$(grep -E '^go [0-9]' $1/go.mod | head -n1 | awk '{print $2}')"
+}
+
+_mise_detect_java() {
+  REPLY=
+  local major gradle_file
+
+  # 1. Gradle version catalog
+  if [[ -f $1/gradle/libs.versions.toml ]]; then
+    major="$(grep -E '^[[:space:]]*java[[:space:]]*=' $1/gradle/libs.versions.toml \
+      | head -1 | grep -E -o '[0-9]+' | head -1)"
+  fi
+
+  # 2. Gradle build file literal
+  if [[ -z $major ]]; then
+    [[ -f $1/build.gradle.kts ]] && gradle_file=$1/build.gradle.kts
+    [[ -f $1/build.gradle ]] && gradle_file=$1/build.gradle
+    if [[ -n $gradle_file ]]; then
+      major="$(grep -E -o '(sourceCompatibility|targetCompatibility|languageVersion|JavaLanguageVersion\.of|jvmToolchain)[^0-9]*(1[._])?[0-9]+' $gradle_file \
+        | head -1 | grep -E -o '(1[._])?[0-9]+$')"
+    fi
+  fi
+
+  # 3. Maven
+  if [[ -z $major && -f $1/pom.xml ]]; then
+    major="$(grep -E -o '<(maven\.compiler\.(release|target|source)|java\.version|release)>(1\.)?[0-9]+' $1/pom.xml \
+      | head -1 | grep -E -o '(1\.)?[0-9]+$')"
+  fi
+
+  # Old style 1.8 / VERSION_1_8 means Java 8
+  major=${major#1[._]}
+
+  # Plain java@25 in mise is OpenJDK, so ask for Temurin explicitly
+  [[ -n $major ]] && REPLY=temurin-$major
+}
+
+# Switch tool $1 to version $2 for this shell, offering to install it if missing
+_mise_use() {
+  local tool=$1 version=$2 var="MISE_${(U)1}_VERSION" install
+  [[ ${(P)var} == $version ]] && return
+
+  if ! mise where "$tool@$version" &>/dev/null; then
+    [[ -n ${_mise_declined[$tool@$version]} ]] && { unset $var; return }
+    echo "ℹ️  $tool $version is not installed."
+    read "install?Do you want to install it now? (y/n) "
+    if [[ ! $install =~ ^[Yy]$ ]]; then
+      _mise_declined[$tool@$version]=1
+      echo "⚠️  Skipping $tool version switch."
+      unset $var
+      return
+    fi
+    mise install "$tool@$version" || { unset $var; return }
+  fi
+
+  export $var=$version
+  echo "✅ Switched to $tool $version"
+}
+
+load-project-versions() {
+  command -v mise &>/dev/null || return
+  local tool dir
+
+  for tool in node python go java; do
+    REPLY=
+    dir=$PWD
+    # Walk up to the nearest folder that declares a version for this tool
+    while true; do
+      _mise_has_native $dir $tool && { REPLY=; break }
+      _mise_detect_$tool $dir
+      [[ -n $REPLY || $dir == / ]] && break
+      dir=${dir:h}
+    done
+
+    if [[ -n $REPLY ]]; then
+      _mise_use $tool $REPLY
+    else
+      # A version file or the global config applies, let mise handle it
+      unset "MISE_${(U)tool}_VERSION"
+    fi
+  done
 }
 
 # Register hook and run on shell start
-add-zsh-hook chpwd load-sdkman-java
-load-sdkman-java
+add-zsh-hook chpwd load-project-versions
+load-project-versions
 ```
 
-After saving, restart the shell:
+Then restart the shell with `exec zsh`.
+
+### Migrating from nvm, pyenv, goenv and SDKMAN!
+
+If you previously followed an older version of this guide, you can move your existing setup to mise:
+
+1. Back up your zsh config: `cp ~/.zshrc ~/.zshrc.bak`
+2. Follow [Installing mise](#installing-mise) above.
+3. Reuse the Node.js and Python versions you already installed:
+
+   ```bash
+   mise sync node --nvm
+   mise sync python --pyenv
+   ```
+
+4. Set your default versions, e.g. `mise use -g node@24 python@3.12 go@1.24 java@temurin-25 maven@3 gradle@9`. Go and Java versions from goenv and SDKMAN! are installed fresh by mise.
+5. In `~/.zshrc`, remove the `nvm`, `pyenv`, `goenv` and `sdkman` initialization blocks, the `load-nvmrc`, `load-pyenv-version`, `load-goenv-version` and `load-sdkman-java` functions, and their `add-zsh-hook` lines. The single hook in [Reading versions from build files](#reading-versions-from-build-files) replaces all four.
+6. Restart the shell with `exec zsh` and confirm `which node python go java` all point into `~/.local/share/mise`.
+
+`mise sync` creates links into `~/.nvm` and `~/.pyenv` rather than copies. Before deleting those folders, reinstall the versions under mise, for example:
 
 ```bash
-exec zsh
+mise uninstall node@24 && mise install node@24
+mise uninstall --all python && mise install python@3.12
+rm -rf ~/.nvm ~/.pyenv ~/.goenv ~/.sdkman
+brew uninstall pyenv goenv
 ```
-
-The hook will now automatically switch to the Java version declared in `.sdkmanrc` (or inferred from `pom.xml` / `build.gradle`) whenever you change into a project directory.
 
 ## Check Setup
 
