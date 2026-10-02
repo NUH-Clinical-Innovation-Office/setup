@@ -26,6 +26,7 @@ Read the instructions carefully before executing any commands. In general it is 
   - [Auto adjusting versions based on repository](#auto-adjusting-versions-based-on-repository)
     - [Reading versions from build files](#reading-versions-from-build-files)
   - [Migrating from nvm, pyenv, goenv and SDKMAN!](#migrating-from-nvm-pyenv-goenv-and-sdkman)
+  - [Moving bun to mise](#moving-bun-to-mise)
 - [Check Setup](#check-setup)
 - [AI Tools](#ai-tools)
   - [Privacy Considerations by Tool](#privacy-considerations-by-tool)
@@ -340,7 +341,7 @@ Think of it this way: a direct install is like having only one pair of shoes, wh
 
 ### Installing mise
 
-We use [mise](https://mise.jdx.dev) as our single version manager for Node.js, Python, Go and Java (including Maven and Gradle). One tool replaces `nvm`, `pyenv`, `goenv` and `SDKMAN!`, and it keeps your terminal fast: activating mise takes a few milliseconds, whereas loading all four separate version managers can add over a second to every new terminal.
+We use [mise](https://mise.jdx.dev) as our single version manager for Node.js, Bun, Python, Go and Java (including Maven and Gradle). One tool replaces `nvm`, `pyenv`, `goenv` and `SDKMAN!`, and it keeps your terminal fast: activating mise takes a few milliseconds, whereas loading all four separate version managers can add over a second to every new terminal.
 
 In a terminal, execute the following command:
 
@@ -359,21 +360,24 @@ Add the following at the **very end** of the file:
 ```zsh
 # ─── Tool Initializations ────────────────────────────────────────────────────
 
-# mise manages node, python, go, java, gradle and maven, and auto-switches
-# versions on cd from mise.toml, .nvmrc, .python-version, .go-version, .sdkmanrc
-# (build files like package.json are handled by the hook further below)
+# mise manages node, bun, python, go, java, gradle and maven, and auto-switches
+# versions on cd from mise.toml, .nvmrc, .bun-version, .python-version,
+# .go-version, .sdkmanrc (build files like pyproject.toml are handled by the
+# hook further below)
 export PATH="$PATH:$HOME/go/bin"
+export PATH="$HOME/.bun/bin:$PATH"
 eval "$(mise activate zsh)"
 ```
 
-`$HOME/go/bin` is where binaries installed with `go install` end up, so they are available on your `PATH`.
+`$HOME/go/bin` and `$HOME/.bun/bin` are where binaries installed with `go install` and `bun add -g` end up, so they are available on your `PATH`.
 
-Keep the mise block (and the hook from [Reading versions from build files](#reading-versions-from-build-files)) as the **last** lines of `~/.zshrc`. If a line after it changes `PATH`, mise runs twice on every new terminal and prints its warnings twice. Installers such as bun add their lines to the end of the file, so move the mise block back to the end after installing them.
+Keep the mise block (and the hook from [Reading versions from build files](#reading-versions-from-build-files)) as the **last** lines of `~/.zshrc`. If a line after it changes `PATH`, mise runs twice on every new terminal and prints its warnings twice. Some installers add their lines to the end of the file, so move the mise block back to the end after installing them.
 
-Next, allow mise to read the version files used by other version managers (`.nvmrc`, `.python-version`, `.go-version`, `.sdkmanrc`), so existing projects work without changes:
+Next, allow mise to read the version files used by other version managers (`.nvmrc`, `.bun-version`, `.python-version`, `.go-version`, `.sdkmanrc`), so existing projects work without changes:
 
 ```bash
 mise settings add idiomatic_version_file_enable_tools node
+mise settings add idiomatic_version_file_enable_tools bun
 mise settings add idiomatic_version_file_enable_tools python
 mise settings add idiomatic_version_file_enable_tools go
 mise settings add idiomatic_version_file_enable_tools java
@@ -408,17 +412,13 @@ If you see `v24.X.X`, the installation succeeded.
 
 We use [bun](https://bun.sh) as our package manager (instead of npm/yarn/pnpm).
 
-Install it:
+Install bun and make it the default version:
 
 ```bash
-curl -fsSL https://bun.sh/install | bash
+mise use -g bun@1
 ```
 
-The installer adds a few lines to the end of `~/.zshrc`. Move the mise block back below them so it stays last (see [Installing mise](#installing-mise)).
-
-```bash
-exec zsh
-```
+Like Node.js, mise switches the bun version per project, from `mise.toml`, `.bun-version` or the `packageManager` field in `package.json` (e.g. `"packageManager": "bun@1.4.2"`).
 
 Verify the install:
 
@@ -495,6 +495,8 @@ Once mise is activated in your `~/.zshrc`, it automatically switches versions wh
 | `mise.toml`       | any                    | see below              |
 | `.nvmrc`          | Node.js                | `24`                   |
 | `.node-version`   | Node.js                | `24`                   |
+| `.bun-version`    | Bun                    | `1.4.2`                |
+| `package.json`    | Bun (`packageManager`) | `"bun@1.4.2"`          |
 | `.python-version` | Python                 | `3.12`                 |
 | `.go-version`     | Go                     | `1.24.0`               |
 | `.java-version`   | Java                   | `temurin-25`           |
@@ -504,7 +506,7 @@ Once mise is activated in your `~/.zshrc`, it automatically switches versions wh
 For new projects, prefer a single `mise.toml` in the root of the repository. Create one by running `mise use` (without `-g`) inside the project folder:
 
 ```bash
-mise use node@24 python@3.12
+mise use node@24 bun@1 python@3.12
 ```
 
 This produces a `mise.toml` like:
@@ -512,6 +514,7 @@ This produces a `mise.toml` like:
 ```toml
 [tools]
 node = "24"
+bun = "1"
 python = "3.12"
 ```
 
@@ -743,6 +746,27 @@ mise uninstall --all python && mise install python@3.12
 rm -rf ~/.nvm ~/.pyenv ~/.goenv ~/.sdkman
 brew uninstall pyenv goenv
 ```
+
+### Moving bun to mise
+
+If you installed bun with the `curl` installer or Homebrew, switch to the mise version:
+
+1. Note down your global packages, if any: `ls ~/.bun/bin`
+2. If you used the `curl` installer, remove the lines it added to `~/.zshrc` (keep the `$HOME/.bun/bin` line from [Installing mise](#installing-mise)):
+
+   ```zsh
+   # bun completions
+   [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+
+   # bun
+   export BUN_INSTALL="$HOME/.bun"
+   export PATH="$BUN_INSTALL/bin:$PATH"
+   ```
+
+3. Remove the old install: `rm -rf ~/.bun` for the `curl` installer, or `brew uninstall bun` for Homebrew.
+4. Install bun with mise: `mise use -g bun@1`
+5. Reinstall your global packages with `bun add -g <package>`.
+6. Restart the shell with `exec zsh` and confirm `which bun` points into `~/.local/share/mise`.
 
 ## Check Setup
 
