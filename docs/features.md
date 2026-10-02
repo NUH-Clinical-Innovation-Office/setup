@@ -12,9 +12,11 @@
 | GitHub CLI Authentication              | stable  | SSH key setup and gh CLI authentication                        |
 | Git Configuration                      | stable  | Global git user.name and user.email setup                     |
 | Docker (OrbStack)                      | stable  | OrbStack installation as Docker alternative                    |
-| Node.js (nvm)                          | stable  | Node version manager with auto-switching zsh hook              |
-| Python (pyenv)                        | stable  | Python version manager with auto-switching zsh hook            |
-| Go (goenv)                            | stable  | Go version manager with auto-switching zsh hook                 |
+| mise Version Manager                   | stable  | Single version manager with auto-switching, plus zsh hook for build files |
+| Node.js (mise) + Bun                   | stable  | Node.js via mise, Bun as package manager                       |
+| Python (mise)                          | stable  | Python via mise                                                |
+| Go (mise)                              | stable  | Go via mise                                                    |
+| Java (mise)                            | stable  | Java (Temurin), Maven and Gradle via mise                      |
 | Setup Validation Script                | stable  | check-script.sh validates all installed components             |
 
 ## Extension Support

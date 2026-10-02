@@ -76,84 +76,59 @@ for plugin in "${plugins[@]}"; do
 done
 
 # -------------------------------
-# Source nvm and pyenv
+# Load mise-managed tools
 # -------------------------------
-export NVM_DIR="$HOME/.nvm"
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-  # Load nvm
-  \. "$NVM_DIR/nvm.sh"
-fi
-
-export PYENV_ROOT="$HOME/.pyenv"
-if [ -s "$PYENV_ROOT/bin/pyenv" ]; then
-  export PATH="$PYENV_ROOT/bin:$PATH"
-fi
-
-export SDKMAN_DIR="$HOME/.sdkman"
-if [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
-  # Load sdkman
-  \. "$SDKMAN_DIR/bin/sdkman-init.sh"
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise env -s zsh)"
 fi
 
 # -------------------------------
 # Node, Python, Go & Java check (zsh-safe)
 # -------------------------------
 echo ""
-echo "🔧 Checking Node.js, Python, Go, and Java versions..."
+echo "🔧 Checking mise, Node.js, Python, Go, and Java versions..."
+
+if command -v mise >/dev/null 2>&1; then
+  MISE_VER=$(mise --version 2>/dev/null)
+  echo -e "\033[0;32m✅ mise is installed, version: $MISE_VER\033[0m"
+else
+  echo -e "\033[0;31m❌ mise is NOT installed\033[0m"
+  all_ok=false
+fi
 
 # Node.js
-if command -v nvm >/dev/null 2>&1; then
-  if command -v node >/dev/null 2>&1; then
-    NODE_VER=$(node -v)
-    echo -e "\033[0;32m✅ nvm is installed, Node version: $NODE_VER\033[0m"
-  else
-    echo -e "\033[0;31m❌ nvm is installed but Node.js is NOT installed\033[0m"
-    all_ok=false
-  fi
+if command -v node >/dev/null 2>&1; then
+  NODE_VER=$(node -v)
+  echo -e "\033[0;32m✅ Node.js is installed, version: $NODE_VER\033[0m"
 else
-  echo -e "\033[0;31m❌ nvm is NOT installed\033[0m"
+  echo -e "\033[0;31m❌ Node.js is NOT installed (mise use -g node@24)\033[0m"
   all_ok=false
 fi
 
 # Python
-if command -v pyenv >/dev/null 2>&1; then
-  if command -v python >/dev/null 2>&1; then
-    PY_VER=$(python -V 2>&1)
-    echo -e "\033[0;32m✅ pyenv is installed, Python version: $PY_VER\033[0m"
-  else
-    echo -e "\033[0;31m❌ pyenv is installed but Python is NOT installed\033[0m"
-    all_ok=false
-  fi
+if command -v python >/dev/null 2>&1; then
+  PY_VER=$(python -V 2>&1)
+  echo -e "\033[0;32m✅ Python is installed, version: $PY_VER\033[0m"
 else
-  echo -e "\033[0;31m❌ pyenv is NOT installed\033[0m"
+  echo -e "\033[0;31m❌ Python is NOT installed (mise use -g python@3.12)\033[0m"
   all_ok=false
 fi
 
 # Go
-if command -v goenv >/dev/null 2>&1; then
-  if command -v go >/dev/null 2>&1; then
-    GO_VER=$(go version)
-    echo -e "\033[0;32m✅ goenv is installed, Go version: $GO_VER\033[0m"
-  else
-    echo -e "\033[0;31m❌ goenv is installed but Go is NOT installed\033[0m"
-    all_ok=false
-  fi
+if command -v go >/dev/null 2>&1; then
+  GO_VER=$(go version)
+  echo -e "\033[0;32m✅ Go is installed, version: $GO_VER\033[0m"
 else
-  echo -e "\033[0;31m❌ goenv is NOT installed\033[0m"
+  echo -e "\033[0;31m❌ Go is NOT installed (mise use -g go@1.24)\033[0m"
   all_ok=false
 fi
 
 # Java
-if command -v sdk >/dev/null 2>&1; then
-  if command -v java >/dev/null 2>&1; then
-    JAVA_VER=$(java -version 2>&1 | head -n1)
-    echo -e "\033[0;32m✅ sdkman is installed, Java version: $JAVA_VER\033[0m"
-  else
-    echo -e "\033[0;31m❌ sdkman is installed but Java is NOT installed\033[0m"
-    all_ok=false
-  fi
+if command -v java >/dev/null 2>&1; then
+  JAVA_VER=$(java -version 2>&1 | head -n1)
+  echo -e "\033[0;32m✅ Java is installed, version: $JAVA_VER\033[0m"
 else
-  echo -e "\033[0;31m❌ sdkman is NOT installed\033[0m"
+  echo -e "\033[0;31m❌ Java is NOT installed (mise use -g java@temurin-25)\033[0m"
   all_ok=false
 fi
 
