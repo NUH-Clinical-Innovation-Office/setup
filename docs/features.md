@@ -13,7 +13,7 @@
 | Git Configuration                      | stable  | Global git user.name and user.email setup                     |
 | Docker (OrbStack)                      | stable  | OrbStack installation as Docker alternative                    |
 | mise Version Manager                   | stable  | Single version manager with auto-switching, plus zsh hook for build files |
-| Node.js (mise) + Bun                   | stable  | Node.js via mise, Bun as package manager                       |
+| Node.js + Bun (mise)                   | stable  | Node.js and Bun (package manager) via mise                     |
 | Python (mise)                          | stable  | Python via mise                                                |
 | Go (mise)                              | stable  | Go via mise                                                    |
 | Java (mise)                            | stable  | Java (Temurin), Maven and Gradle via mise                      |
