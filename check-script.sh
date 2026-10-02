@@ -51,7 +51,6 @@ check_command jq
 check_command openssl
 check_command code
 check_command zsh
-check_command bun
 
 # -------------------------------
 # Check Oh My Zsh plugins
@@ -83,10 +82,10 @@ if command -v mise >/dev/null 2>&1; then
 fi
 
 # -------------------------------
-# Node, Python, Go & Java check (zsh-safe)
+# Node, Bun, Python, Go & Java check (zsh-safe)
 # -------------------------------
 echo ""
-echo "🔧 Checking mise, Node.js, Python, Go, and Java versions..."
+echo "🔧 Checking mise, Node.js, Bun, Python, Go, and Java versions..."
 
 if command -v mise >/dev/null 2>&1; then
   MISE_VER=$(mise --version 2>/dev/null)
@@ -102,6 +101,15 @@ if command -v node >/dev/null 2>&1; then
   echo -e "\033[0;32m✅ Node.js is installed, version: $NODE_VER\033[0m"
 else
   echo -e "\033[0;31m❌ Node.js is NOT installed (mise use -g node@24)\033[0m"
+  all_ok=false
+fi
+
+# Bun
+if command -v bun >/dev/null 2>&1; then
+  BUN_VER=$(bun -v)
+  echo -e "\033[0;32m✅ Bun is installed, version: $BUN_VER\033[0m"
+else
+  echo -e "\033[0;31m❌ Bun is NOT installed (mise use -g bun@1)\033[0m"
   all_ok=false
 fi
 
