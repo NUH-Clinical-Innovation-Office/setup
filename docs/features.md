@@ -46,4 +46,3 @@ The setup includes the following VS Code extensions:
 | ----------------- | ------- | --------------------------------------------------------- |
 | Claude Code       | stable  | Anthropic CLI with opt-out training guidance              |
 | OpenAI Codex      | stable  | OpenAI coding agent integration                           |
-| Alibaba Coding Plan | stable  | Alternative endpoint configuration for Claude Code        |
