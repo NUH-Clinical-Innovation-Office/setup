@@ -11,7 +11,8 @@
 | Shell Configuration                    | stable  | Oh My Zsh with plugins (git, autosuggestions, highlighting)   |
 | GitHub CLI Authentication              | stable  | SSH key setup and gh CLI authentication                        |
 | Git Configuration                      | stable  | Global git user.name and user.email setup                     |
-| Docker (OrbStack)                      | stable  | OrbStack installation as Docker alternative                    |
+| Docker (Colima)                        | stable  | Colima container runtime with Docker CLI and Compose           |
+| Lazydocker                             | stable  | Terminal UI for managing Docker containers                     |
 | mise Version Manager                   | stable  | Single version manager with auto-switching, plus zsh hook for build files |
 | Node.js + Bun (mise)                   | stable  | Node.js and Bun (package manager) via mise                     |
 | Python (mise)                          | stable  | Python via mise                                                |
