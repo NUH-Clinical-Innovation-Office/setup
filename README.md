@@ -849,81 +849,8 @@ AI coding assistants can significantly boost productivity, but it is crucial to 
 - **Important Notes**: Code is processed in ephemeral cloud sandboxes on OpenAI servers; CLI keeps source code local and only sends prompts/context
 - **Transparency Concern**: Lacks easily accessible privacy documentation specifically for Codex interactions
 
-[**Alibaba Cloud Coding Plan**](https://www.alibabacloud.com/help/en/model-studio/coding-plan) (Paid - subscription plans):
-
-- **What It Is**: A monthly subscription by Alibaba Cloud's Model Studio offering flat-rate access to multiple top AI coding models, avoiding unpredictable API billing
-- **Pricing**: Lite plan ($10/month, ~18,000 requests/month); Pro plan ($50/month, ~90,000 requests/month)
-- **Available Models**: Qwen3.5-Plus, Qwen3-Coder-Next, GLM-4.7, Kimi K2.5, and more — switchable via `/model` command
-- **Compatible Tools**: Works with Claude Code, Qwen Code CLI, Cursor, Cline, OpenCode, OpenClaw, and any tool supporting OpenAI or Anthropic API protocols
-- **Data Privacy**: Code is processed on Alibaba Cloud servers (Singapore/Virginia); review [Alibaba Cloud's privacy policy](https://www.alibabacloud.com/help/en/model-studio/coding-plan) before use — particularly important for sensitive or proprietary code
-- **Setup**: Use the plan-specific API key (`sk-sp-xxxxx`) with the base URL `https://coding-intl.dashscope.aliyuncs.com/v1` (OpenAI-compatible) or `https://coding-intl.dashscope.aliyuncs.com/apps/anthropic` (Anthropic-compatible)
-- **Note**: API key must only be used in interactive coding tools; using it in automated scripts or batch scenarios may result in a suspended subscription
-
-To use with Claude Code:
-
-```bash
-export ANTHROPIC_BASE_URL=https://coding-intl.dashscope.aliyuncs.com/apps/anthropic
-export ANTHROPIC_API_KEY=YOUR_CODING_PLAN_API_KEY
-export ANTHROPIC_MODEL=qwen3.5-plus
-claude
-```
-
-### Using Alternative Endpoints to Save Cost
-
-Claude Code supports alternative API endpoints via environment variables. This lets you use different models (e.g., Alibaba's Qwen, OpenAI models) that may be cheaper or faster for specific tasks.
-
-**Trade-offs:**
-
-- **Quality**: Anthropic's Claude models generally produce higher quality output for complex reasoning, debugging, and architecture decisions. Third-party models may struggle with nuanced edge cases.
-- **Speed**: Alternative endpoints often respond faster but may require more iterations to get correct results — net time savings vary.
-- **Cost**: Qwen and similar models cost significantly less per token (~10-50x cheaper). Useful for straightforward tasks where Claude would be overkill.
-
-**When to use which:**
-
-| Task                                         | Model                                |
-| -------------------------------------------- | ------------------------------------ |
-| Complex debugging, architecture, code review | Anthropic Claude                     |
-| Simple refactors, boilerplate, documentation | Alternative (Qwen, etc.)             |
-| Exploratory prototyping                      | Alternative first, escalate if stuck |
-
-**Usage with aliases:**
-
-Add these to your `~/.aliases` or `~/.zshrc`:
-
-```zsh
-# Qwen (Alibaba Cloud Coding Plan)
-claude-qwen() {
-  local OLD_BASE_URL="$ANTHROPIC_BASE_URL"
-  local OLD_AUTH_TOKEN="$ANTHROPIC_AUTH_TOKEN"
-  local OLD_MODEL="$ANTHROPIC_MODEL"
-  local OLD_DISABLE="$CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
-
-  export ANTHROPIC_BASE_URL="https://coding-intl.dashscope.aliyuncs.com/apps/anthropic"
-  export ANTHROPIC_API_KEY="YOUR-API-KEY"
-  export ANTHROPIC_MODEL="qwen3.5-plus"
-  export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
-
-  claude "$@"
-
-  # We need this to set the values back to the original so that when you quit and launch claude it will be back to your anthropic subscription
-  export ANTHROPIC_BASE_URL="$OLD_BASE_URL"
-  export ANTHROPIC_AUTH_TOKEN="$OLD_AUTH_TOKEN"
-  export ANTHROPIC_MODEL="$OLD_MODEL"
-  export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="$OLD_DISABLE"
-}
-```
-
-**Usage:**
-
-```bash
-claude-qwen                              # Qwen via Alibaba endpoint
-ANTHROPIC_MODEL=qwen3-coder-next claude  # One-off with different model
-```
-
-**Note:** Replace `YOUR-API-KEY` with your actual Alibaba Coding Plan API key.
-
 Notes:
-Other AI coding tools such as Cursor, GitHub Copilot, and Qwen Code etc. have been intentionally excluded from this guide to keep things focused. While these are capable tools that can support productive software development, the options listed here are ones I have personally used and evaluated. In my experience, they offer a stronger overall experience and value, though this reflects my own judgment and may not align with everyone's preferences. You are encouraged to explore other tools and choose what works best for your workflow.
+Other AI coding tools have been intentionally excluded from this guide to keep things focused. While these are capable tools that can support productive software development, the options listed here are ones I have personally used and evaluated. In my experience, they offer a stronger overall experience and value, though this reflects my own judgment and may not align with everyone's preferences. You are encouraged to explore other tools and choose what works best for your workflow.
 
 ### Disabling VSCode Telemetry
 
@@ -949,7 +876,7 @@ Microsoft VSCode collects telemetry data by default. To disable it completely:
 
 ### Recommendations
 
-1. **For Professional/Commercial Work**: Use paid enterprise plans (GitHub Copilot Business, Cursor Business, or Claude for Work) - these guarantee your code won't be used for training
+1. **For Professional/Commercial Work**: Use paid enterprise plans (Claude for Work, or ChatGPT Team/Enterprise for Codex) - these guarantee your code won't be used for training
 2. **For Personal Projects**: If using free/pro consumer plans, always opt out of training and enable privacy modes
 3. **For Sensitive Code**: Consider self-hosted solutions or tools with strong privacy guarantees
 4. **Always**: Disable VSCode telemetry and review extension privacy policies before installation
