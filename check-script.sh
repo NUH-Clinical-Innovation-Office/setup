@@ -75,6 +75,28 @@ for plugin in "${plugins[@]}"; do
 done
 
 # -------------------------------
+# Docker & Docker Compose check
+# -------------------------------
+echo ""
+echo "🐳 Checking Docker and Docker Compose..."
+
+if command -v docker >/dev/null 2>&1; then
+  DOCKER_VER=$(docker --version)
+  echo -e "\033[0;32m✅ Docker is installed: $DOCKER_VER\033[0m"
+else
+  echo -e "\033[0;31m❌ Docker is NOT installed (brew install colima docker)\033[0m"
+  all_ok=false
+fi
+
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_VER=$(docker compose version)
+  echo -e "\033[0;32m✅ Docker Compose is installed: $COMPOSE_VER\033[0m"
+else
+  echo -e "\033[0;31m❌ Docker Compose is NOT available (brew install docker-compose, then set cliPluginsExtraDirs)\033[0m"
+  all_ok=false
+fi
+
+# -------------------------------
 # Load mise-managed tools
 # -------------------------------
 if command -v mise >/dev/null 2>&1; then

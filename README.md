@@ -14,8 +14,9 @@ Read the instructions carefully before executing any commands. In general it is 
 - [GitHub](#github)
 - [Git](#git)
 - [Docker](#docker)
-  - [Installing OrbStack](#installing-orbstack)
-  - [Why OrbStack over Docker Desktop?](#why-orbstack-over-docker-desktop)
+  - [Installing Colima](#installing-colima)
+  - [Lazydocker](#lazydocker)
+  - [Why Colima over Docker Desktop?](#why-colima-over-docker-desktop)
 - [Programming Languages](#programming-languages)
   - [Installing mise](#installing-mise)
   - [Node.js](#nodejs)
@@ -274,42 +275,91 @@ If you want to change things locally instead of globally use `--local` instead.
 
 ## Docker
 
-Docker is a platform that allows you to run applications in isolated containers. We recommend using [OrbStack](https://orbstack.dev/) instead of Docker Desktop as it is faster, lighter (uses significantly less memory), and provides a better developer experience on macOS.
+Docker is a platform that allows you to run applications in isolated containers. We use [Colima](https://github.com/abiosoft/colima) as the container runtime instead of Docker Desktop. Colima runs Docker inside a lightweight Linux VM, is free and open source, and works with the standard `docker` and `docker compose` commands.
 
-### Installing OrbStack
+### Installing Colima
 
-Run the following command in the terminal:
-
-```bash
-brew install --cask orbstack
-```
-
-After installation, launch OrbStack:
+Colima only provides the container runtime, so the Docker CLI and Compose plugin are installed separately. Run the following command in the terminal:
 
 ```bash
-open -a OrbStack
+brew install colima docker docker-compose docker-credential-helper
 ```
 
-OrbStack will guide you through the initial setup. It includes Docker, Docker Compose, and Kubernetes support out of the box.
+So that `docker compose` can find the Compose plugin installed by Homebrew, add the plugin directory to your Docker config:
+
+```bash
+mkdir -p ~/.docker
+[ -f ~/.docker/config.json ] || echo '{}' > ~/.docker/config.json
+jq --arg dir "$(brew --prefix)/lib/docker/cli-plugins" \
+  '.cliPluginsExtraDirs = [$dir]' ~/.docker/config.json > ~/.docker/config.json.tmp \
+  && mv ~/.docker/config.json.tmp ~/.docker/config.json
+```
+
+Start Colima:
+
+```bash
+colima start --cpu 4 --memory 8 --vm-type vz --vz-rosetta
+```
+
+> ⚠️ `--cpu 4 --memory 8` (4 CPUs, 8 GB RAM) is a starting point. Adjust these to suit your MacBook. Check your total CPU cores and memory under **Apple menu > About This Mac** and leave enough for macOS and your other apps. You can change them later with `colima stop` followed by `colima start --cpu <n> --memory <gb>`.
+
+`--vm-type vz --vz-rosetta` uses Apple's Virtualization framework and lets Apple Silicon Macs run `amd64` images through Rosetta.
+
+To have Colima start automatically when you log in:
+
+```bash
+brew services start colima
+```
 
 To verify the installation:
 
 ```bash
+colima status
 docker --version
 docker compose version
+docker run --rm hello-world
 ```
 
-You should see version information for both commands.
+You should see version information for both commands and a "Hello from Docker!" message.
 
-### Why OrbStack over Docker Desktop?
+Useful Colima commands:
 
-- **Performance**: Up to 2x faster than Docker Desktop
-- **Memory Efficiency**: Uses ~50% less memory and CPU
-- **Speed**: Starts containers almost instantly
-- **Native Integration**: Better macOS integration with less overhead
-- **Free for Commercial Use**: No licensing restrictions unlike Docker Desktop
+```bash
+colima stop     # Stop the VM
+colima start    # Start the VM with the last used settings
+colima delete   # Delete the VM and all containers, images and volumes
+```
 
-**Note**: If you already have Docker Desktop installed, OrbStack can coexist with it, but it's recommended to uninstall Docker Desktop to avoid conflicts:
+### Lazydocker
+
+Colima has no graphical interface. For a visual way to manage containers, images, volumes and logs, use [lazydocker](https://github.com/jesseduffield/lazydocker), a terminal UI for Docker.
+
+```bash
+brew install lazydocker
+```
+
+Run it from any terminal:
+
+```bash
+lazydocker
+```
+
+Optionally, add a short alias to your `~/.zshrc`:
+
+```bash
+alias lzd='lazydocker'
+```
+
+Use `[` and `]` to switch tabs, `x` to open the actions menu for the selected item, and `q` to quit.
+
+### Why Colima over Docker Desktop?
+
+- **Free and Open Source**: MIT licensed, with no commercial licensing restrictions unlike Docker Desktop
+- **Lightweight**: Runs a minimal Linux VM with CPU and memory limits you control
+- **Standard Tooling**: Uses the regular `docker` and `docker compose` CLI, so existing projects work unchanged
+- **Terminal-first**: Fits a CLI workflow, with lazydocker available when you want a visual overview
+
+**Note**: If you already have Docker Desktop installed, it's recommended to uninstall it to avoid conflicts with the `docker` CLI and Docker context:
 
 ```bash
 # Uninstall Docker Desktop (optional)
