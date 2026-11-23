@@ -416,6 +416,20 @@ Add the following at the **very end** of the file:
 # hook further below)
 export PATH="$PATH:$HOME/go/bin"
 export PATH="$HOME/.bun/bin:$PATH"
+
+# Install the configured Bun before mise updates PATH.
+autoload -Uz add-zsh-hook
+_mise_install_missing_bun() {
+  local missing
+  missing=$(command mise --quiet ls --missing --no-header bun) || return 0
+  if [[ -n $missing ]]; then
+    command mise install bun
+  fi
+  return 0
+}
+add-zsh-hook chpwd _mise_install_missing_bun
+_mise_install_missing_bun
+
 eval "$(mise activate zsh)"
 ```
 
@@ -468,7 +482,7 @@ Install bun and make it the default version:
 mise use -g bun@1
 ```
 
-Like Node.js, mise switches the bun version per project, from `mise.toml`, `.bun-version` or the `packageManager` field in `package.json` (e.g. `"packageManager": "bun@1.4.2"`). If that version is not installed yet, mise prints `missing: bun@<version>` and installs it the first time you run `bun` (or run `mise install`).
+Mise selects the Bun version from `mise.toml`, `.bun-version`, or the `packageManager` field in `package.json` (for example, `"packageManager": "bun@1.4.2"`). The zsh hook in [Installing mise](#installing-mise) installs a missing Bun version when you start a shell in the project or `cd` into it. Keep the hook above `eval "$(mise activate zsh)"` so Bun is installed before mise updates `PATH`. If you skip the hook, run `mise install bun` when mise reports a missing version.
 
 Verify the install:
 
@@ -568,7 +582,7 @@ bun = "1"
 python = "3.12"
 ```
 
-Commit this file so everyone on the team uses the same versions. When a teammate enters the project for the first time, they run `mise install` to install any missing versions.
+Commit this file so everyone on the team uses the same versions. Run `mise install` to install all missing versions. The zsh hook in [Installing mise](#installing-mise) handles Bun automatically.
 
 #### Reading versions from build files
 
